@@ -1,7 +1,7 @@
 #include <coroutine>
 #include <exception>
 
-namespace coro_callback {
+namespace co_go {
 
 template <typename R>
 [[noreturn]]

@@ -3,20 +3,41 @@
 #include <functional>
 #include <print>
 
+namespace {
+int step = 1;
+
+// + lib callback style
+void int_callback_api(std::function<void(int)> recieve)
+{
+  std::println("before recieve");
+  CHECK(step++ == 1);
+  recieve(42);
+  std::println("after recieve");
+  CHECK(step++ == 3);
+};
+// - lib callback style
+// + lib wrapped for coro style
+auto int_recieve_coro() { return co_go::wrap<int>(int_callback_api); };
+// - lib wrapped for coro style
+
+// + lib callback style
+auto void_callback_api(std::function<void(void)> recieve)
+{
+  std::println("before recieve");
+  CHECK(step++ == 1);
+  recieve();
+  std::println("after recieve");
+  CHECK(step++ == 3);
+};
+// - lib callback style
+// + lib wrapped for coro style
+auto void_recieve_coro() { return co_go::wrap<void>(void_callback_api); };
+// - lib wrapped for coro style
+
+}// namespace
+
 TEST_CASE("int [callback]")
 {
-  int step = 1;
-
-  // + lib callback style
-  auto int_callback_api = ([&](std::function<void(int)> recieve) {
-    std::println("before recieve");
-    CHECK(step++ == 1);
-    recieve(42);
-    std::println("after recieve");
-    CHECK(step++ == 3);
-  });
-  // - lib callback style
-
   // + app callback style
   step = 1;
   CHECK(step == 1);
@@ -28,13 +49,10 @@ TEST_CASE("int [callback]")
   CHECK(step == 4);
   // - app callback style
 
-  // + lib wrapped for coro style
-  auto int_recieve_coro = [&]() { return coro_callback::wrap<int>(int_callback_api); };
-  // - lib wrapped for coro style
   step = 1;
   CHECK(step == 1);
-  [&] -> coro_callback::recieve<void> {
-    // + app coro style must exist inside acoro
+  [&] -> co_go::recieve<void> {
+    // + app coro style must exist inside a coro
     auto _42 = co_await int_recieve_coro();
     std::println("recieving 42");
     CHECK(step++ == 2);
@@ -46,18 +64,6 @@ TEST_CASE("int [callback]")
 
 TEST_CASE("void [callback]")
 {
-  int step = 1;
-
-  // + lib callback style
-  auto void_callback_api = [&](std::function<void(void)> recieve) {
-    std::println("before recieve");
-    CHECK(step++ == 1);
-    recieve();
-    std::println("after recieve");
-    CHECK(step++ == 3);
-  };
-  // - lib callback style
-
   // + app callback style
   step = 1;
   CHECK(step == 1);
@@ -68,14 +74,11 @@ TEST_CASE("void [callback]")
   CHECK(step == 4);
   // - app callback style
 
-  // + lib wrapped for coro style
-  auto void_recieve_coro = [&]() { return coro_callback::wrap<void>(void_callback_api); };
-  // - lib wrapped for coro style
   step = 1;
-  [&] -> coro_callback::recieve<void> {
-    // + app coro style must exist inside acoro
+  [&] -> co_go::recieve<void> {
+    // + app coro style must exist inside a coro
     co_await void_recieve_coro();
-    std::println("recieving");
+    std::println("recieving void");
     CHECK(step++ == 2);
     // - app coro style
   }();
