@@ -8,9 +8,9 @@ function(myproject_setup_dependencies)
   # For each dependency, see if it's
   # already been provided to us by a parent project
 
-  if(NOT TARGET fmtlib::fmtlib)
-    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
-  endif()
+#  if(NOT TARGET fmtlib::fmtlib)
+#    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
+#  endif()
 
   if(NOT TARGET Catch2::Catch2WithMain)
     cpmaddpackage("gh:catchorg/Catch2@3.8.1")
