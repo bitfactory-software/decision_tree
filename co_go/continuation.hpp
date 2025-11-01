@@ -104,7 +104,7 @@ struct continuation_awaiter<void, Api> {
   const Api api_;
 };
 template <typename R, typename Api>
-auto wrap(Api&& api) {
+auto await_callback(Api&& api) {
   return continuation_awaiter<R, std::decay_t<Api>>{std::move(api)};
 }
 
