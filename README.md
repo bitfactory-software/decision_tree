@@ -6,7 +6,7 @@
 
 ## About co_go
 
-This is a C++ Best Practices GitHub template for getting up and running with C++ quickly.
+Simple c++ corountines to learn the topic.
 
 
 
