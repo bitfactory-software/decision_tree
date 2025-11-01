@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <co_go/continuation.hpp>
+#include <co_go/resource.hpp>
 #include <functional>
 #include <print>
 
@@ -83,4 +84,38 @@ TEST_CASE("void [continuation]") {
     // - app coro style
   }();
   CHECK(step == 4);
+}
+
+#include <mutex>
+std::mutex m;
+const bool mt_run = true;
+
+TEST_CASE("simple [resource]") {
+
+  try {
+    auto lg{[&](bool log) -> co_go::resource<std::mutex> {
+      if (log) std::println("Before locking");
+      if (mt_run) m.lock();
+      co_yield m;
+      if (mt_run) m.unlock();
+      if (log) std::println("After locking");
+    }(true)};
+    throw 0;
+  } catch (...) {
+  }
+}
+
+TEST_CASE("throw [resource]") {
+
+  try {
+    auto lg{[&](bool log) -> co_go::resource<std::mutex> {
+      if (log) std::println("Before locking");
+      if (mt_run) m.lock();
+      co_yield m;
+      if (mt_run) m.unlock();
+      if (log) std::println("After locking");
+    }(true)};
+    throw 0;
+  } catch (...) {
+  }
 }

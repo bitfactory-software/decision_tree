@@ -21,11 +21,7 @@ struct continuation {
     struct await_continuation {
       await_continuation() noexcept {}
       bool await_ready() const noexcept { return false; }
-      void await_suspend(std::coroutine_handle<basic_promise_type>
-                             this_continuation) noexcept {
-        auto& promise = this_continuation.promise();
-        if (promise.callingCoroutine_) promise.callingCoroutine_.resume();
-      }
+      void await_suspend(std::coroutine_handle<basic_promise_type>) noexcept {}
       void await_resume() noexcept {}
     };
     auto initial_suspend() noexcept { return std::suspend_never{}; }
@@ -33,7 +29,6 @@ struct continuation {
     void unhandled_exception() noexcept {
       exception_ = std::current_exception();
     }
-    std::coroutine_handle<> callingCoroutine_ = {};
     std::exception_ptr exception_ = {};
   };
   template <typename R>
@@ -52,9 +47,6 @@ struct continuation {
   continuation& operator=(continuation&& r) noexcept = delete;
 
   continuation() noexcept = default;
-  continuation(continuation&& t) noexcept {
-    std::swap(coroutine_, t.coroutine_);
-  }
   explicit continuation(std::coroutine_handle<promise_type> coroutine)
       : coroutine_(coroutine) {}
   ~continuation() noexcept {
@@ -77,6 +69,7 @@ struct continuation {
   }
   auto get_result() { return get_result(rethrow_exception<R>); }
 
+ private:
   std::coroutine_handle<promise_type> coroutine_;
 };
 
