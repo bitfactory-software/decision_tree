@@ -15,5 +15,30 @@ if (AfxMessageBox("Continue?", MB_YESNO) != MB_YES)
 ... // continue(!) with further processing
 ```
 
+In more modern programming models, e.g. 'QML' this pattern changes to a 'callback' style like this:
+
+```cpp
+show_message_box("Continue?", {"Yes","No" }, [&](std::string_view choice){
+    // continue(!) with further processing
+    });
+} // usualy the end of the function
+```
+
+What to do, when you want to port the logic written for windows style to an architecture, that requires a callback style? You go for a continuation coroutine.
+With that tool you can go like this:
+
+```cpp
+class abstract_message_box {
+virtual co_go::continuation<std::string>
+  show (std::string_view text, std::initializer_list<std::string_view> const& options) = 0; 
+}
+```
+
+
+
+
+
+
+
 
 
