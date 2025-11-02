@@ -12,6 +12,8 @@ function(cogoproject_setup_dependencies is_top_level)
     return()
   endif()
 
+  message("cpm add packages")
+
 #  if(NOT TARGET fmtlib::fmtlib)
 #    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
 #  endif()
