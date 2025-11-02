@@ -30,7 +30,7 @@ cogoproject_setup_options()
 
 cogoproject_global_options()
 include(Dependencies.cmake)
-cogoproject_setup_dependencies()
+cogoproject_setup_dependencies(PROJECT_IS_TOP_LEVEL)
 
 cogoproject_local_options()
 

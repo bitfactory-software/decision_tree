@@ -3,10 +3,14 @@ include(cmake/CPM.cmake)
 # Done as a function so that updates to variables like
 # CMAKE_CXX_FLAGS don't propagate out to other
 # targets
-function(cogoproject_setup_dependencies)
+function(cogoproject_setup_dependencies is_top_level)
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
+
+  if(NOT is_top_level)
+    return()
+  endif()
 
 #  if(NOT TARGET fmtlib::fmtlib)
 #    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
