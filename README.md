@@ -1,17 +1,18 @@
-# co_go: Opaque First-Class Continuation Coroutines for C++
+# co_go: Opaque First-Class Continuation Coroutine for C++
 
 Write clean **sequential** code — run it on **callback-based** asynchronous systems.
 
 `co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
 
 ✔ Keep linear control flow (`if`, `for`, exceptions)
+
 ✔ Decouple business logic from UI/network async APIs
+
 ✔ Works with **any** callback-based API — no specific framework required
+
 ✔ No thread switching — resumes where the callback runs
 
 ---
-
-# co_go: An opaque C++ first-class continuation coroutine
 
 ## Why `co_go::continuation`?
 
@@ -60,24 +61,6 @@ You change **the implementation**, not **the caller**.
 
 ---
 
-### Architecture Overview
-
-```
-Legacy sequential UI
- (modal dialogs)
-        │
-        ▼
-┌─────────────────────────────┐
-│ co_go::continuation<T> API  │  Portable async business logic
-└─────────────────────────────┘
-        │
-        ▼
-Modern callback-based UI
-   (Qt/QML/etc.)
-```
-
----
-
 ### Portable Implementations
 
 #### Modal / synchronous backend
@@ -112,38 +95,6 @@ co_show_message_box(std::string const& prompt,
 Here, `_1` represents the callback that `await_callback_async` uses to resume the coroutine with the result.
 
 ---
-
-## Why not `cppcoro`?
-
-### `cppcoro` solves a *different* problem
-
-cppcoro’s `task<T>` is about **asynchronous computation**:
-
-* Start work → finish later
-* One-way, linear execution
-* Not externally resumable
-* Suited for background tasks (I/O, threading)
-
-But UI workflows rely on **external events** (user actions, UI signals) controlling when code resumes.
-
-### What UI code really needs
-
-> “Pause here until the UI tells me to continue.”
-
-That means:
-
-* No worker thread running the task
-* The **UI event loop** resumes the coroutine
-* The continuation must be **first-class and externally controlled**
-
-cppcoro does **not** provide:
-
-| Feature                                           | cppcoro::task               | co_go::continuation |
-| ------------------------------------------------- | --------------------------- | ------------------- |
-| Externally resumable continuation (opaque handle) | ❌                           | ✅                   |
-| Suspend waiting on UI/user callback               | ⚠️ custom bridging required | ✅ built-in          |
-| Portable control-flow abstraction                 | ❌                           | ✅                   |
-|                                                   |                             |                     |
 
 ### Porting Synchronous APIs to Asynchronous Callback APIs
 
@@ -230,10 +181,6 @@ co_send_request(std::string const& request)
 * port to async architectures cleanly
 * without rewriting business workflows into callbacks
 
-You write code *like on Windows*, while the runtime adapts to modern platforms’ event loops under the hood.
-
-> ✅ Same logic, any UI architecture — modal or async.
-
 ---
 
 ## Getting Started
@@ -270,7 +217,8 @@ run_flow(); // automatically starts and resumes on the UI thread
 ## Error Handling & Cancellation
 
 * Exceptions thrown inside the coroutine propagate through `co_await`.
-* UI-side cancellations (e.g. dialog closed) should resume with an error value or exception.
+* UI-side cancellations (e.g. dialog closed) should resume with a special value.
+* because the callback can only revieve on parameter, you must pack an error code into a struct, tuple or a std::expect 
 
 Example:
 
@@ -279,7 +227,6 @@ try {
     co_await wait_for_user();
 } catch (std::exception const& e) {
     log_error(e.what());
-    co_return;
 }
 ```
 
