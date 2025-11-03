@@ -1,8 +1,3 @@
-Gern! Hier ist der korrigierte und leicht sprachlich geglättete Markup-Text.
-Ich habe Rechtschreibfehler, Formatierungsfehler und ein paar missverständliche Formulierungen korrigiert — inhaltlich aber nichts verändert.
-
----
-
 # co_go: Opaque First-Class Continuation Coroutine for C++
 
 Write clean **sequential** code — run it on **callback-based** asynchronous systems.
