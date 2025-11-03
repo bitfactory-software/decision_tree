@@ -103,7 +103,9 @@ It can modernize **any** blocking API — networking, filesystem, protocols, etc
 Typical migration:
 
 1️⃣ Wrap existing synchronous APIs using `co_go::continuation`
+
 2️⃣ Update business logic to use `co_await`
+
 3️⃣ Replace the underlying implementation with async callbacks
 
 ---
