@@ -10,7 +10,7 @@ Our product had its origin as a classic Windows application. In that envirionmet
 
 ```cpp
 ...
-if (AfxMessageBox("Continue?", MB_YESNO) != MB_YES)
+if (show_message_box("Continue?", {"Yes","No" } != "Yes");
   return;
 ... // continue(!) with further processing
 ```
@@ -24,7 +24,7 @@ show_message_box("Continue?", {"Yes","No" }, [&](std::string_view choice){
 } // usualy the end of the function
 ```
 
-What to do, when you want to port the logic written for windows style to an architecture, that requires a callback style? You go for a continuation coroutine.
+What to do, when you want to port the logic written for windows style to an architecture, that requires a callback style, but you do not want to packk all the logic into callbacks? You need a **continuation**.
 With that tool you can go like this:
 
 ```cpp
