@@ -10,7 +10,7 @@ Our product had its origin as a classic Windows application. In that envirionmet
 
 ```cpp
 ...
-if (show_message_box("Continue?", {"Yes","No" } != "Yes");
+if (show_message_box("Continue?", {"Yes","No" }) != "Yes");
   return;
 ... // continue(!) with further processing
 ```
