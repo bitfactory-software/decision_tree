@@ -232,19 +232,14 @@ TEST_CASE("api_async_callback_throws_in_background_thread [continuation]") {
   {
     bool resumed = false;
     co_go::dont_await([&] -> co_go::continuation<> {
-      try {
-        auto id_start = std::this_thread::get_id();
-        auto error = co_await fixture::
-            api_async_callback_throws_in_background_thread_wrapped();
-        CHECK(error == -1);
-        auto id_continuation = std::this_thread::get_id();
-        CHECK(id_start != id_continuation);
-        CHECK(id_start != id_continuation);
-        resumed = true;
-
-      } catch (std::runtime_error& e) {
-        CHECK(false);
-      }
+      auto id_start = std::this_thread::get_id();
+      auto error = co_await fixture::
+          api_async_callback_throws_in_background_thread_wrapped();
+      CHECK(error == -1);
+      auto id_continuation = std::this_thread::get_id();
+      CHECK(id_start != id_continuation);
+      CHECK(fixture::a_threads_id == id_continuation);
+      resumed = true;
     }());
     fixture::a_thread.join();
     CHECK(resumed);

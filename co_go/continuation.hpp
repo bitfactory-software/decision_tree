@@ -156,7 +156,6 @@ auto await_callback(Api&& api)
 template <typename R, typename Api>
 auto await_callback_async(Api&& api)
   requires is_noexept_callback_api<R, Api>
-
 {
   return await_callback<R, Api, false>(std::move(api));
 }
