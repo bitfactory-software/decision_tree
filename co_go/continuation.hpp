@@ -48,10 +48,6 @@ class continuation {
     std::exception_ptr exception_ = {};
     bool sync_ = true;
     bool awaited_ = true;
-    void orphan(this auto& self) {
-      if (calling_coroutine_) calling_coroutine_.orphan();
-      std::coroutine_handle::from_promise(self).destroy();
-    }
   };
   template <typename R>
   struct handle_return {
@@ -125,35 +121,19 @@ class continuation {
 template <typename R, typename Api, bool sync = true>
 struct continuation_awaiter {
   bool await_ready() { return false; }
-  void await_suspend(auto calling_continuation) {
-    calling_continuation.promise().sync_ = sync;
+  void await_suspend(auto calling_coroutine) {
+    calling_coroutine.promise().sync_ = sync;
     bool called = false;
-    api_([this, calling_continuation, called](const R& r) mutable {
+    api_([this, calling_coroutine, called](const R& r) mutable {
       if (called) return;
       called = true;
       result_ = r;
-      calling_continuation.resume();
+      calling_coroutine.resume();
     });
   }
   R await_resume() { return result_; }
   const Api api_;
   R result_ = {};
-};
-template <typename Api, bool sync>
-struct continuation_awaiter<void, Api, sync> {
-  bool await_ready() { return false; }
-  void await_suspend(auto calling_continuation) {
-    calling_continuation.promise().sync_ = sync;
-    bool called = false;
-    api_([this, calling_continuation, called]() mutable {
-      if (called) return;
-      called = true;
-      calling_continuation.resume();
-    });
-    if (!called) calling_continuation.promise().orphan();
-  }
-  void await_resume() {}
-  const Api api_;
 };
 template <typename R, typename Api, bool sync = true>
 auto await_callback(Api&& api)

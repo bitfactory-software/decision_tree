@@ -20,7 +20,8 @@ void api_async(const std::function<void(int)>& callback) {
   });
 }
 
-void api_async_callback_no_called([[maybe_unused]]const std::function<void(int)>& callback) {
+void api_async_callback_no_called(
+    [[maybe_unused]] const std::function<void(int)>& callback) {
   a_thread = std::thread([=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
@@ -158,11 +159,19 @@ TEST_CASE("AsynchronWithException") {
 
 TEST_CASE("api_async_callback_no_called") {
   CHECK(co_go::continuation_promise_count == 0);
-  [[maybe_unused]] auto _ = [] -> co_go::continuation<> {
-        co_await co_go::await_callback_async<int>(fixture::api_async_callback_no_called);
-  }();
-  fixture::a_thread.join();
-  CHECK(co_go::continuation_promise_count == 0);
+  {
+    bool resumed = false;
+    [[maybe_unused]] auto _ = [&] -> co_go::continuation<> {
+      co_await co_go::await_callback_async<int>(
+          fixture::api_async_callback_no_called);
+      resumed = true;
+    }();
+    fixture::a_thread.join();
+    CHECK(resumed);
+  }
+  CHECK(co_go::continuation_promise_count ==
+        1);  // <- leaks, because callback not invoked!
+  co_go::continuation_promise_count = 0;
 }
 
 TEST_CASE("Asynchron") {
