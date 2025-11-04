@@ -164,9 +164,9 @@ co_send_request(std::string const& request)
 }
 ```
 
-*✅ Business logic requires **no changes**
-*✅ Underlying transport switches from sync → async
-*✅ The same coroutine flow now runs without blocking
+* ✅ Business logic requires **no changes**
+* ✅ Underlying transport switches from sync → async
+* ✅ The same coroutine flow now runs without blocking
 
 ---
 
