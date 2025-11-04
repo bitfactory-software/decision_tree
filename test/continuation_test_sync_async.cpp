@@ -167,7 +167,7 @@ TEST_CASE("api_async_callback_no_called") {
       resumed = true;
     }();
     fixture::a_thread.join();
-    CHECK(resumed);
+    CHECK(!resumed);
   }
   CHECK(co_go::continuation_promise_count ==
         1);  // <- leaks, because callback not invoked!
