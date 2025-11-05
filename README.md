@@ -55,22 +55,6 @@ if (co_await show_message_box("Continue?", {"Yes", "No"}) != "Yes")
 // continue(!) with further processing
 ```
 
----
-
-### ✅ Key Advantages
-
-`co_go::continuation<T>` provides:
-
-* ✅ Suspend & resume anywhere including on the UI thread
-* ✅ Zero callback nesting → linear readable control flow
-* ✅ One coroutine API supports both modal and async UI
-* ✅ GUI event loop compatible (Qt/QML/etc.)
-* ✅ Ideal migration path for large legacy codebases
-
-You change **the implementation**, not **the caller**.
-
----
-
 ### Portable Implementations
 
 #### Modal / synchronous backend
@@ -102,6 +86,20 @@ co_show_message_box(std::string const& prompt,
 }
 ```
 Here, `_1` represents the callback that `await_callback_async` uses to resume the coroutine with the result.
+
+### ✅ Key Advantages
+
+`co_go::continuation<T>` provides:
+
+* ✅ Suspend & resume anywhere including on the UI thread
+* ✅ Zero callback nesting → linear readable control flow
+* ✅ One coroutine API supports both modal and async UI
+* ✅ GUI event loop compatible (Qt/QML/etc.)
+* ✅ Ideal migration path for large legacy codebases
+
+You change **the implementation**, not **the caller**.
+
+---
 
 ---
 
