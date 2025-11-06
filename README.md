@@ -6,20 +6,20 @@ Write clean **sequential** code — run it on **callback-based** synchronous and
 
 ```cpp
 // ✔ Legacy sync blocking API.
-std::string legacy_blocking_op();
+std::string blocking_api();
 
 // ✔ Legacy API — either sync OR async, we don't care.
-void legacy_sync_or_async_op(std::function<void(std::string)> const& callback) noexcept;
+void sync_or_async_callback_api(std::function<void(std::string)> const& callback) noexcept;
 
 // ✔ New coroutine wrapper
-co_go::continuation<std::string> any_op(bool use_legacy_blocking)
+co_go::continuation<std::string> any_api(bool use_legacy_blocking)
 {
     if (use_legacy_blocking) {
         co_return legacy_blocking_op();
     } else {
         // co_go transforms callback into an awaitable continuation
         auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
-        co_return co_await co_go::await_callback<std::string, sync_mode>(legacy_sync_or_async_op);
+        co_return co_await co_go::await_callback<std::string, sync_mode>(sync_or_async_callback_api);
     }
 }
 
