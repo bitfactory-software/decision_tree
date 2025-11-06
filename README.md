@@ -23,7 +23,7 @@ co_go::continuation<std::string> any_api(bool use_blocking_api)
     }
 }
 
-co_go::spawn( []->co_go::continuation<>{
+co_go::spawn([]->co_go::continuation<>{
     auto answer = co_await co_op();
     process( answer);
 }); 
