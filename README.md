@@ -13,7 +13,7 @@ void legacy_sync_or_async_op(std::function<void(std::string)> const& callback) n
 co_go::continuation<std::string> co_op()
 {
     // co_go transforms callback into an awaitable continuation
-    auto sync_mode = co_go::synchronisation::sync; // .. OR async, we don't care.
+    auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
     co_return co_await co_go::await_callback<std::string, sync_mode>(legacy_sync_or_async_op);
 }
 ```
