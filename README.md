@@ -5,17 +5,17 @@ Write clean **sequential** code — run it on **callback-based** synchronous and
 `co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**:
 
 ```cpp
-// ✔ Legacy sync blocking API.
+// ✔ Sync blocking API.
 std::string blocking_api();
 
-// ✔ Legacy API — either sync OR async, we don't care.
+// ✔ Callback API — either sync OR async, we don't care.
 void sync_or_async_callback_api(std::function<void(std::string)> const& callback) noexcept;
 
-// ✔ New coroutine wrapper
-co_go::continuation<std::string> any_api(bool use_legacy_blocking)
+// ✔ Continuation coroutine wrapper
+co_go::continuation<std::string> any_api(bool use_blocking_api)
 {
-    if (use_legacy_blocking) {
-        co_return legacy_blocking_op();
+    if (use_blocking_api) {
+        co_return blocking_api();
     } else {
         // co_go transforms callback into an awaitable continuation
         auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
