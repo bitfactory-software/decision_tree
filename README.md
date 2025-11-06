@@ -2,20 +2,31 @@
 
 Write clean **sequential** code — run it on **callback-based** synchronous and asynchronous systems.
 
-`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
-
+`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**:
 
 ```cpp
+// ✔ Legacy sync blocking API.
+std::string legacy_blocking_op();
+
 // ✔ Legacy API — either sync OR async, we don't care.
 void legacy_sync_or_async_op(std::function<void(std::string)> const& callback) noexcept;
 
 // ✔ New coroutine wrapper
-co_go::continuation<std::string> co_op()
+co_go::continuation<std::string> co_op(bool use_legacy_blocking)
 {
-    // co_go transforms callback into an awaitable continuation
-    auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
-    co_return co_await co_go::await_callback<std::string, sync_mode>(legacy_sync_or_async_op);
+    if (use_legacy_blocking) {
+        co_return legacy_blocking_op();
+    } else {
+        // co_go transforms callback into an awaitable continuation
+        auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
+        co_return co_await co_go::await_callback<std::string, sync_mode>(legacy_sync_or_async_op);
+    }
 }
+
+co_go::spawn( []->co_go::continuation<>{
+    auto answer = co_await co_op();
+    process( answer);
+}); 
 ```
 
 * ✅ Keep linear control flow (`if`, `for`, exceptions)
