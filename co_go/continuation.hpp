@@ -8,6 +8,8 @@ namespace co_go {
 static int continuation_promise_count = 0;
 #endif
 
+enum class synchronisation { sync, async };
+
 template <typename... Args>
 struct result_t_impl {
   using type = std::tuple<Args...>;
@@ -36,7 +38,7 @@ class continuation {
   static void build_async_chain(auto suspended_coroutine,
                                 auto calling_coroutine) {
     suspended_coroutine.promise().calling_coroutine_ = calling_coroutine;
-    calling_coroutine.promise().sync_ = false;
+    calling_coroutine.promise().sync_ = synchronisation::async;
   }
 
   template <typename HandleReturn>
@@ -70,7 +72,7 @@ class continuation {
     }
     std::coroutine_handle<> calling_coroutine_ = {};
     std::exception_ptr exception_ = {};
-    bool sync_ = true;
+    synchronisation sync_ = synchronisation::sync;
     bool awaited_ = true;
     void destroy_if_not_awaited(auto& coroutine) {
       if (!awaited_) coroutine.destroy();
@@ -125,7 +127,7 @@ class continuation {
       : coroutine_(coroutine) {}
   ~continuation() noexcept {
     if (!coroutine_) return;
-    if (coroutine_.promise().sync_)
+    if (coroutine_.promise().sync_ == synchronisation::sync)
       coroutine_.destroy();
     else
       coroutine_.promise().awaited_ = false;
@@ -133,7 +135,7 @@ class continuation {
 
   bool await_ready() const noexcept { return false; }
   void await_suspend(auto calling_coroutine) noexcept {
-    if (!coroutine_ || coroutine_.promise().sync_)
+    if (!coroutine_ || coroutine_.promise().sync_ == synchronisation::sync)
       calling_coroutine.resume();
     else
       build_async_chain(this->coroutine_, calling_coroutine);
@@ -154,7 +156,7 @@ class continuation {
   }
 
   auto coroutine() const { return coroutine_; }
-  bool is_sync() const { return coroutine_.promise().sync_; }
+  bool is_sync() const { return coroutine_.promise().sync_ == synchronisation::sync; }
 };
 
 template <typename Api, typename... CallbackArgs>
@@ -171,14 +173,13 @@ template <typename Api, typename... CallbackArgs>
 concept is_noexept_callback_api =
     is_noexept_callback_api_v<Api, CallbackArgs...>;
 
-enum class synchronisation { sync, async };
 
 template <synchronisation sync_or_async, typename Api, typename... CallbackArgs>
   requires(is_noexept_callback_api<Api, CallbackArgs...>)
 struct continuation_awaiter {
   bool await_ready() { return false; }
   void await_suspend(auto calling_coroutine) {
-    calling_coroutine.promise().sync_ = sync_or_async == synchronisation::sync;
+    calling_coroutine.promise().sync_ = sync_or_async;
     bool called = false;
     api_([this, calling_coroutine, called](CallbackArgs&&... args) mutable {
       if (called) return;
