@@ -2,7 +2,7 @@
 
  # co_go::continuation — design and sequence examples
 
-This document explains how `co_go::continuation<R>` works and how it interacts with `continuation_awaiter` (the `await_callback` / `await_callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `co_go/continuation.hpp`.
+This document explains how `co_go::continuation<R>` works and how it interacts with `continuation_awaiter` (the `callback` / `callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `co_go/continuation.hpp`.
 
 ---
 
@@ -67,8 +67,8 @@ This document explains how `co_go::continuation<R>` works and how it interacts w
       - calls `calling_coroutine.resume()` to resume the suspended coroutine.
   - `await_resume()` returns the stored `result_`.
 - Helpers:
-  - `await_callback<Api>(api)` → `sync = true` (treat the call as sync unless the callback runs later).
-  - `await_callback_async<Api>(api)` → `sync = false` (explicitly mark as async).
+  - `callback<Api>(api)` → `sync = true` (treat the call as sync unless the callback runs later).
+  - `callback_async<Api>(api)` → `sync = false` (explicitly mark as async).
 
 ---
 
@@ -92,7 +92,7 @@ and who resumes or destroys which coroutine.
 ### 1) Synchronous callback (callback invoked inline inside `await_suspend`)
 Actors:
 - A = outer coroutine that does `co_await B()`
-- B = inner coroutine that uses `await_callback` (sync = true)
+- B = inner coroutine that uses `callback` (sync = true)
 - API = callback-based function
 
 Sequence:
@@ -114,10 +114,10 @@ Key states:
 
 ---
 
-### 2) Asynchronous callback (callback invoked later; use `await_callback_async`)
+### 2) Asynchronous callback (callback invoked later; use `callback_async`)
 Actors:
 - A = outer coroutine that `co_await`s B()
-- B = inner coroutine using `await_callback_async`
+- B = inner coroutine using `callback_async`
 - API = async callback provider (invokes cb later)
 
 Sequence:

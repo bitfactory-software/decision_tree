@@ -74,7 +74,7 @@ void api_async_callback_throws_in_background_thread(
 co_go::continuation<int> test_1_async() {
   int initalValue = 1;
   std::println("Start test_1_async");
-  int x = co_await co_go::await_callback_async<int>(&api_async);
+  int x = co_await co_go::callback_async<int>(&api_async);
   x += initalValue;
   CHECK(x == 42);
   std::println("test_1_async");
@@ -98,7 +98,7 @@ co_go::continuation<int> test_1_sync_with_exception() {
 
 co_go::continuation<int> test_1_async_with_exception() {
   std::println("Start test_1_async_with_exception");
-  int x = co_await co_go::await_callback_async<int>(&api_async);
+  int x = co_await co_go::callback_async<int>(&api_async);
   CHECK(x == 41);
   throw std::runtime_error("test_Exception");
   co_return 42;
@@ -205,7 +205,7 @@ TEST_CASE("api_async_callback_no_called") {
   {
     bool resumed = false;
     [[maybe_unused]] auto _ = [&] -> co_go::continuation<> {
-      co_await co_go::await_callback_async<int>(
+      co_await co_go::callback_async<int>(
           fixture::api_async_callback_no_called);
       resumed = true;
     }();
@@ -223,7 +223,7 @@ namespace {
 namespace fixture {
 co_go::continuation<int>
 api_async_callback_throws_in_background_thread_wrapped() {
-  co_return co_await co_go::await_callback_async<int>(
+  co_return co_await co_go::callback_async<int>(
       fixture::api_async_callback_throws_in_background_thread);
 }
 }  // namespace fixture

@@ -19,7 +19,7 @@ co_go::continuation<std::string> any_api(bool use_blocking_api)
     } else {
         // co_go transforms callback into an awaitable continuation
         auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
-        co_return co_await co_go::await_callback<std::string, sync_mode>(sync_or_async_callback_api);
+        co_return co_await co_go::callback<std::string, sync_mode>(sync_or_async_callback_api);
     }
 }
 
@@ -92,12 +92,12 @@ co_show_message_box(std::string const& prompt,
                     std::initializer_list<std::string> const& choices)
 {
     using namespace std::placeholders;
-    co_return co_await co_go::await_callback_async<std::string>(
+    co_return co_await co_go::callback_async<std::string>(
         std::bind(show_message_box_qml, prompt, choices, _1)
     );
 }
 ```
-Here, `_1` represents the callback that `await_callback_async` uses to resume the coroutine with the result.
+Here, `_1` represents the callback that `callback_async` uses to resume the coroutine with the result.
 
 ### ✅ Key Advantages
 
@@ -192,7 +192,7 @@ co_go::continuation<std::string>
 co_send_request(std::string const& request)
 {
     using namespace std::placeholders;
-    co_return co_await co_go::await_callback_async<std::string>(
+    co_return co_await co_go::callback_async<std::string>(
         std::bind(send_request_async, request, _1)
     );
 }

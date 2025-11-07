@@ -65,7 +65,7 @@ static_assert(co_go::is_noexept_callback_api_v<
 TEST_CASE("async_api_string_view_int 1") {
   auto called = false;
   [&] -> co_go::continuation<void> {
-    auto [s, i] = co_await co_go::await_callback_async<std::string_view, int>(
+    auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
     CHECK(s == "hello world");
     CHECK(i == 42);

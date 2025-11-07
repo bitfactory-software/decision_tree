@@ -168,23 +168,23 @@ struct continuation_awaiter {
 };
 
 template <synchronisation sync_or_async, typename... CallbackArgs>
-auto await_callback(auto&& api) {
+auto callback(auto&& api) {
   using api_t = decltype(api);
   return continuation_awaiter<sync_or_async, std::decay_t<api_t>,
                               CallbackArgs...>{std::forward<api_t>(api)};
 }
 
 template <typename... CallbackArgs>
-auto await_callback_sync(auto&& api) {
+auto callback_sync(auto&& api) {
   using api_t = decltype(api);
-  return await_callback<synchronisation::sync, CallbackArgs...>(
+  return callback<synchronisation::sync, CallbackArgs...>(
       std::forward<api_t>(api));
 }
 
 template <typename... CallbackArgs>
-auto await_callback_async(auto&& api) {
+auto callback_async(auto&& api) {
   using api_t = decltype(api);
-  return await_callback<synchronisation::async, CallbackArgs...>(
+  return callback<synchronisation::async, CallbackArgs...>(
       std::forward<api_t>(api));
 }
 
