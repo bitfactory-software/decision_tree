@@ -1,6 +1,7 @@
 #include <coroutine>
 #include <exception>
 #include <functional>
+#include <variant>
 
 namespace co_go {
 
@@ -181,6 +182,8 @@ template <typename... Args>
 class continuation {
  public:
   using promise_type = basic_promise_type<handle_return<Args...>, Args...>;
+  using continuation_awaiter_t = continuation_awaiter<promise_type, Args...>;
+  //using callback_awaiter_t = callback_awaiter<Args...>;
 
   continuation& operator=(const continuation&) = delete;
   continuation& operator=(continuation&& r) = delete;
@@ -189,24 +192,39 @@ class continuation {
 
   continuation() noexcept = default;
   explicit continuation(std::coroutine_handle<promise_type> coroutine)
-      : awaiter_(coroutine) {}
+      : awaiter_(continuation_awaiter_t{coroutine}) {}
+//  explicit continuation(callback_awaiter_t > awaiter) : awaiter_(awaiter) {}
 
-  bool await_ready() const noexcept { return awaiter_.await_ready(); }
-  void await_suspend(auto calling_coroutine) noexcept {
-    awaiter_.await_suspend(calling_coroutine);
+  bool await_ready() const noexcept {
+    return std::visit([](auto& awaiter) { return awaiter.await_ready(); }, awaiter_);
   }
-  auto await_resume() { return awaiter_.await_resume(); }
+  void await_suspend(auto calling_coroutine) noexcept {
+    std::visit([&](auto& awaiter) { awaiter.await_suspend(calling_coroutine); },
+               awaiter_);
+  }
+  auto await_resume() {
+    return std::visit([](auto& awaiter) { return awaiter.await_resume(); },
+                      awaiter_);
+  }
 
   auto get_sync_result(auto handle_exception) {
-    return awaiter_.get_sync_result(handle_exception);
+    return std::get<continuation_awaiter_t>(awaiter_).get_sync_result(
+        handle_exception);
   }
-  auto get_sync_result() { return awaiter_.get_sync_result(); }
+  auto get_sync_result() {
+    return std::get<continuation_awaiter_t>(awaiter_).get_sync_result();
+  }
 
-  auto coroutine() const { return awaiter_.coroutine(); }
-  bool is_sync() const { return awaiter_.is_sync(); }
+  auto coroutine() const {
+    return std::get<continuation_awaiter_t>(awaiter_).coroutine();
+  }
+  bool is_sync() const {
+    return std::get<continuation_awaiter_t>(awaiter_).is_sync();
+  }
 
  private:
-  continuation_awaiter<promise_type, Args...> awaiter_;
+//  std::variant<continuation_awaiter_t, callback_awaiter_t> awaiter_;
+  std::variant<continuation_awaiter_t> awaiter_;
 };
 
 template <typename HandleReturn, typename... Args>
