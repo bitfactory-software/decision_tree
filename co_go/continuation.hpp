@@ -34,12 +34,32 @@ struct result_t_impl<> {
 template <typename... Args>
 using result_t = result_t_impl<Args...>;
 
-template <synchronisation sync_or_async, typename Api, typename... CallbackArgs>
-  requires(is_noexept_callback_api<Api, CallbackArgs...>)
-struct callback_awaiter {
+template <typename Api, typename... CallbackArgs>
+constexpr bool is_noexept_callback_api_v =
+    std::is_nothrow_invocable_r_v<void, Api,
+                                  std::function<void(CallbackArgs...)>>;
+
+template <typename Api, typename CallbackArg>
+constexpr bool is_noexept_callback_api_v<Api, CallbackArg> =
+    (!std::same_as<CallbackArg, void>) &&
+    std::is_nothrow_invocable_r_v<void, Api, std::function<void(CallbackArg)>>;
+
+template <typename Api, typename... CallbackArgs>
+concept is_noexept_callback_api =
+    is_noexept_callback_api_v<Api, CallbackArgs...>;
+
+template <typename... CallbackArgs>
+class callback_awaiter {
+ public:
+  using callback_t = std::function<void(CallbackArgs...)>;
+  using api_t = std::function<void(callback_t const&)>;
+  template <typename Api>
+  callback_awaiter(synchronisation sync_or_async, Api api)
+    requires is_noexept_callback_api<Api, CallbackArgs...>
+      : sync_or_async_(sync_or_async), api_(std::move(api)) {}
   bool await_ready() { return false; }
   void await_suspend(auto calling_coroutine) {
-    calling_coroutine.promise().sync_ = sync_or_async;
+    calling_coroutine.promise().sync_ = sync_or_async_;
     bool called = false;
     api_([this, calling_coroutine, called](CallbackArgs&&... args) mutable {
       if (called) return;
@@ -50,7 +70,10 @@ struct callback_awaiter {
     });
   }
   auto await_resume() { return result_; }
-  const Api api_;
+
+ private:
+  synchronisation sync_or_async_;
+  api_t api_;
   result_t<CallbackArgs...>::type result_ = {};
 };
 
@@ -183,7 +206,7 @@ class continuation {
  public:
   using promise_type = basic_promise_type<handle_return<Args...>, Args...>;
   using continuation_awaiter_t = continuation_awaiter<promise_type, Args...>;
-  //using callback_awaiter_t = callback_awaiter<Args...>;
+  // using callback_awaiter_t = callback_awaiter<Args...>;
 
   continuation& operator=(const continuation&) = delete;
   continuation& operator=(continuation&& r) = delete;
@@ -193,10 +216,11 @@ class continuation {
   continuation() noexcept = default;
   explicit continuation(std::coroutine_handle<promise_type> coroutine)
       : awaiter_(continuation_awaiter_t{coroutine}) {}
-//  explicit continuation(callback_awaiter_t > awaiter) : awaiter_(awaiter) {}
+  //  explicit continuation(callback_awaiter_t > awaiter) : awaiter_(awaiter) {}
 
   bool await_ready() const noexcept {
-    return std::visit([](auto& awaiter) { return awaiter.await_ready(); }, awaiter_);
+    return std::visit([](auto& awaiter) { return awaiter.await_ready(); },
+                      awaiter_);
   }
   void await_suspend(auto calling_coroutine) noexcept {
     std::visit([&](auto& awaiter) { awaiter.await_suspend(calling_coroutine); },
@@ -223,7 +247,7 @@ class continuation {
   }
 
  private:
-//  std::variant<continuation_awaiter_t, callback_awaiter_t> awaiter_;
+  //  std::variant<continuation_awaiter_t, callback_awaiter_t> awaiter_;
   std::variant<continuation_awaiter_t> awaiter_;
 };
 
@@ -234,26 +258,11 @@ basic_promise_type<HandleReturn, Args...>::get_return_object(this auto& self) {
       std::coroutine_handle<basic_promise_type>::from_promise(self)};
 }
 
-template <typename Api, typename... CallbackArgs>
-constexpr bool is_noexept_callback_api_v =
-    std::is_nothrow_invocable_r_v<void, Api,
-                                  std::function<void(CallbackArgs...)>>;
-
-template <typename Api, typename CallbackArg>
-constexpr bool is_noexept_callback_api_v<Api, CallbackArg> =
-    (!std::same_as<CallbackArg, void>) &&
-    std::is_nothrow_invocable_r_v<void, Api, std::function<void(CallbackArg)>>;
-
-template <typename Api, typename... CallbackArgs>
-concept is_noexept_callback_api =
-    is_noexept_callback_api_v<Api, CallbackArgs...>;
-
 template <synchronisation sync_or_async, typename... CallbackArgs>
 continuation<CallbackArgs...> callback(auto&& api) {
   using api_t = decltype(api);
-  co_return co_await callback_awaiter<sync_or_async, std::decay_t<api_t>,
-                                      CallbackArgs...>{
-      std::forward<api_t>(api)};
+  co_return co_await callback_awaiter<CallbackArgs...>{
+      sync_or_async, std::forward<api_t>(api)};
 }
 
 template <typename... CallbackArgs>
