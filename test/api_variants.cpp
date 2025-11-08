@@ -2,7 +2,9 @@
 #include <chrono>
 #include <functional>
 #include <future>
+#include <generator>
 #include <print>
+#include <ranges>
 #include <thread>
 
 #define CO_GO_CONTINUATION_TEST
@@ -56,26 +58,42 @@ void async_api_string_view_int(
     std::println("after call to continuation async_api");
   }};
 }
-
 co_go::continuation<std::string_view, int> co_async_api_string_view_int() {
   co_return co_await co_go::callback_async<std::string_view, int>(
       fixture::async_api_string_view_int);
 };
-
 co_go::continuation<std::string_view, int> co_sync_api_string_view_int() {
   co_return std::make_tuple<std::string_view, int>(std::string_view("xy"), 2);
 }
 
-void async_api_bool_double_to_string_view_int(
-    bool, int, std::function<void(std::string_view, int)> callback) noexcept {
+void async_api_int_loop(
+    std::function<void(std::optional<std::generator<int>>)> callback) noexcept {
   a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
     std::println("sleep on thread {}", std::this_thread::get_id());
-    callback("hello world", 42);
+    callback([] -> std::generator<int> {
+      for (auto i : std::views::iota(0, 3)) co_yield i;
+    }());
     std::println("after call to continuation async_api");
   }};
 }
+auto co_async_api_int_loop() {
+  return co_go::callback_async<std::optional<std::generator<int>>>(
+      fixture::async_api_int_loop);
+};
+
+// void async_api_bool_double_to_string_view_int(
+//     bool, int, std::function<void(std::string_view, int)> callback) noexcept
+//     {
+//   a_thread = std::thread{[=] {
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(10ms);
+//     std::println("sleep on thread {}", std::this_thread::get_id());
+//     callback("hello world", 42);
+//     std::println("after call to continuation async_api");
+//   }};
+// }
 
 static_assert(
     !co_go::is_noexept_callback_api_v<decltype(async_api_string_view_int),
@@ -115,6 +133,20 @@ TEST_CASE("async_api_string_view_int indirect") {
     auto [s, i] = co_await fixture::co_async_api_string_view_int();
     CHECK(s == "hello world");
     CHECK(i == 42);
+    called = true;
+  }();
+  fixture::a_thread.join();
+  CHECK(called);
+}
+
+TEST_CASE("async_api_int_loop") {
+  auto called = false;
+  [&] -> co_go::continuation<> {
+    auto y = 0;
+    for (auto i : *co_await fixture::co_async_api_int_loop()) {
+      CHECK(i == y++);
+    }
+    CHECK(y == 3);
     called = true;
   }();
   fixture::a_thread.join();

@@ -69,7 +69,7 @@ class callback_awaiter {
       calling_coroutine.resume();
     });
   }
-  auto await_resume() { return result_; }
+  auto await_resume() { return std::move(result_); }
 
  private:
   synchronisation sync_or_async_;
@@ -275,7 +275,7 @@ auto callback_sync(auto&& api) {
       std::forward<api_t>(api));
 }
 template <typename... CallbackArgs>
-continuation<CallbackArgs...> callback_async(auto&& api) {
+auto callback_async(auto&& api) {
   using api_t = decltype(api);
   return callback<CallbackArgs...>(synchronisation::async, 
       std::forward<api_t>(api));
