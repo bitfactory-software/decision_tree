@@ -5,7 +5,7 @@
 #include <thread>
 
 #define CO_GO_CONTINUATION_TEST
-#include <co_go/continuation.hpp>
+#include <ca2co/continuation.hpp>
 
 namespace {
 namespace fixture {
@@ -19,8 +19,8 @@ auto func2(std::function<void(int)> const& callback) noexcept -> void;
 #pragma GCC diagnostic pop
 #endif
 
-static_assert(!co_go::is_noexept_callback_api<decltype(func1), int>);
-static_assert(co_go::is_noexept_callback_api<decltype(func2), int>);
+static_assert(!ca2co::is_noexept_callback_api<decltype(func1), int>);
+static_assert(ca2co::is_noexept_callback_api<decltype(func2), int>);
 
 std::thread a_thread;
 std::thread::id a_threads_id = {};
@@ -33,7 +33,7 @@ void api_async(const std::function<void(int)>& callback) noexcept {
     callback(41);
   });
 }
-static_assert(co_go::is_noexept_callback_api<decltype(api_async), int>);
+static_assert(ca2co::is_noexept_callback_api<decltype(api_async), int>);
 
 void api_async_callback_no_called(
     [[maybe_unused]] const std::function<void(int)>& callback) noexcept {
@@ -71,16 +71,16 @@ void api_async_callback_throws_in_background_thread(
   });
 }
 
-co_go::continuation<int> test_1_async() {
+ca2co::continuation<int> test_1_async() {
   int initalValue = 1;
   std::println("Start test_1_async");
-  int x = co_await co_go::callback_async<int>(&api_async);
+  int x = co_await ca2co::callback_async<int>(&api_async);
   x += initalValue;
   CHECK(x == 42);
   std::println("test_1_async");
   co_return x += 1;
 }
-co_go::continuation<int> test_1_sync() {
+ca2co::continuation<int> test_1_sync() {
   int initalValue = 1;
   std::println("Start test_1_sync");
   int x = 41;
@@ -90,21 +90,21 @@ co_go::continuation<int> test_1_sync() {
   co_return x += 1;
 }
 
-co_go::continuation<int> test_1_sync_with_exception() {
+ca2co::continuation<int> test_1_sync_with_exception() {
   std::println("Start test_1_sync_with_exception");
   throw std::runtime_error("test_Exception");
   co_return 42;
 }
 
-co_go::continuation<int> test_1_async_with_exception() {
+ca2co::continuation<int> test_1_async_with_exception() {
   std::println("Start test_1_async_with_exception");
-  int x = co_await co_go::callback_async<int>(&api_async);
+  int x = co_await ca2co::callback_async<int>(&api_async);
   CHECK(x == 41);
   throw std::runtime_error("test_Exception");
   co_return 42;
 }
 
-co_go::continuation<double> test_2(auto&& test1) {
+ca2co::continuation<double> test_2(auto&& test1) {
   std::println("Start test_2");
   auto x = co_await test1();
   CHECK(x == 43);
@@ -112,7 +112,7 @@ co_go::continuation<double> test_2(auto&& test1) {
   co_return x + 1.0;
 }
 
-co_go::continuation<double> test_3(auto&& callbackContinuation) {
+ca2co::continuation<double> test_3(auto&& callbackContinuation) {
   std::println("Start test_3");
   auto x = co_await test_2(callbackContinuation);
   CHECK(x == 44.0);
@@ -120,7 +120,7 @@ co_go::continuation<double> test_3(auto&& callbackContinuation) {
   co_return x + 1.0;
 }
 
-co_go::continuation<> test_4(auto&& callbackContinuation) {
+ca2co::continuation<> test_4(auto&& callbackContinuation) {
   std::println("Start test_4");
   auto x = co_await test_3(callbackContinuation);
   CHECK(x == 45.0);
@@ -129,7 +129,7 @@ co_go::continuation<> test_4(auto&& callbackContinuation) {
   co_return;
 }
 
-co_go::continuation<double> test_4_return_value(auto&& callbackContinuation) {
+ca2co::continuation<double> test_4_return_value(auto&& callbackContinuation) {
   std::println("Start test_4_return_value");
   auto x = co_await test_3(callbackContinuation);
   CHECK(x == 45.0);
@@ -138,7 +138,7 @@ co_go::continuation<double> test_4_return_value(auto&& callbackContinuation) {
   co_return x;
 }
 
-co_go::continuation<> test_5_catched(auto&& throws) {
+ca2co::continuation<> test_5_catched(auto&& throws) {
   std::println("Start test_5_catched");
 
   continuations_run = false;
@@ -158,7 +158,7 @@ TEST_CASE("SimpleSynchron") {
   {
     spawn(fixture::test_1_sync());
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("Synchron") {
@@ -167,13 +167,13 @@ TEST_CASE("Synchron") {
     spawn(fixture::test_4(&fixture::test_1_sync));
     CHECK(fixture::continuations_run);
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("SynchronAccess_return_value") {
   {
     fixture::continuations_run = false;
-    co_go::continuation<double> continuation =
+    ca2co::continuation<double> continuation =
         fixture::test_4_return_value(&fixture::test_1_sync);
     CHECK(fixture::continuations_run);
     CHECK(continuation.is_sync());
@@ -182,14 +182,14 @@ TEST_CASE("SynchronAccess_return_value") {
     double value1 = continuation.get_sync_result();
     CHECK(value1 == 45);
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("SynchronWithException") {
   {
     spawn(fixture::test_5_catched(&fixture::test_1_sync_with_exception));
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("AsynchronWithException") {
@@ -197,41 +197,41 @@ TEST_CASE("AsynchronWithException") {
     spawn(fixture::test_5_catched(&fixture::test_1_async_with_exception));
     fixture::a_thread.join();
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("api_async_callback_no_called") {
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
   {
     bool resumed = false;
-    [[maybe_unused]] auto _ = [&] -> co_go::continuation<> {
-      co_await co_go::callback_async<int>(
+    [[maybe_unused]] auto _ = [&] -> ca2co::continuation<> {
+      co_await ca2co::callback_async<int>(
           fixture::api_async_callback_no_called);
       resumed = true;
     }();
     fixture::a_thread.join();
     CHECK(!resumed);
   }
-  //CHECK(co_go::continuation_promise_count ==
+  //CHECK(ca2co::continuation_promise_count ==
   //      1);  // <- LEAKS, because callback not invoked!
-  co_go::continuation_promise_count = 0;
+  ca2co::continuation_promise_count = 0;
 }
 
 namespace {
 namespace fixture {
-co_go::continuation<int>
+ca2co::continuation<int>
 api_async_callback_throws_in_background_thread_wrapped() {
-  co_return co_await co_go::callback_async<int>(
+  co_return co_await ca2co::callback_async<int>(
       fixture::api_async_callback_throws_in_background_thread);
 }
 }  // namespace fixture
 }  // namespace
 
 TEST_CASE("api_async_callback_throws_in_background_thread [continuation]") {
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
   {
     bool resumed = false;
-    co_go::spawn([&] -> co_go::continuation<> {
+    ca2co::spawn([&] -> ca2co::continuation<> {
       auto id_start = std::this_thread::get_id();
       auto error = co_await fixture::
           api_async_callback_throws_in_background_thread_wrapped();
@@ -244,7 +244,7 @@ TEST_CASE("api_async_callback_throws_in_background_thread [continuation]") {
     fixture::a_thread.join();
     CHECK(resumed);
   }
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("Asynchron") {
@@ -257,13 +257,13 @@ TEST_CASE("Asynchron") {
   fixture::a_thread.join();
   CHECK(fixture::continuations_run);
   std::println("after join");
-  CHECK(co_go::continuation_promise_count == 0);
+  CHECK(ca2co::continuation_promise_count == 0);
 }
 
 TEST_CASE("MoveConstructContinuation") {
-  auto original([]() -> co_go::continuation<> { co_return; }());
+  auto original([]() -> ca2co::continuation<> { co_return; }());
   CHECK(original.coroutine());
-  co_go::continuation<> movedTo(std::move(original));
+  ca2co::continuation<> movedTo(std::move(original));
 #pragma warning(push)
 #pragma warning(disable : 26800)
   CHECK(!original.coroutine());  // moved from

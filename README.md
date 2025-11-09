@@ -1,8 +1,8 @@
-# co_go: Opaque Continuation Coroutine for C++
+# ca2co: Opaque Continuation Coroutine for C++
 
 Write clean **sequential** code — run it on **callback-based** synchronous and asynchronous systems.
 
-`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**:
+`ca2co::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**:
 
 ```cpp
 // ✔ Sync blocking API.
@@ -12,18 +12,18 @@ std::string blocking_api();
 void sync_or_async_callback_api(std::function<void(std::string)> const& callback) noexcept;
 
 // ✔ Continuation coroutine wrapper
-co_go::continuation<std::string> any_api(bool use_blocking_api)
+ca2co::continuation<std::string> any_api(bool use_blocking_api)
 {
     if (use_blocking_api) {
         co_return blocking_api();
     } else {
-        // co_go transforms callback into an awaitable continuation
-        auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
-        co_return co_await co_go::callback<std::string, sync_mode>(sync_or_async_callback_api);
+        // ca2co transforms callback into an awaitable continuation
+        auto sync_mode = ca2co::synchronisation::sync; // .. OR async: as you like!
+        co_return co_await ca2co::callback<std::string, sync_mode>(sync_or_async_callback_api);
     }
 }
 
-co_go::spawn([]->co_go::continuation<>{
+ca2co::spawn([]->ca2co::continuation<>{
     auto answer = co_await co_op();
     process( answer);
 }); 
@@ -36,7 +36,7 @@ co_go::spawn([]->co_go::continuation<>{
 
 ---
 
-## Why we made `co_go::continuation`?
+## Why we made `ca2co::continuation`?
 
 Our product originated as a classic Windows application. In that environment, user interface logic often used **modal dialogs**, making code naturally **sequential**:
 
@@ -59,7 +59,7 @@ However, rewriting existing business logic into callback pyramids is painful —
 
 This is where **continuations** come in.
 
-With `co_go::continuation<T>`, you can keep the sequential structure:
+With `ca2co::continuation<T>`, you can keep the sequential structure:
 
 ```cpp
 if (co_await show_message_box("Continue?", {"Yes", "No"}) != "Yes")
@@ -72,7 +72,7 @@ if (co_await show_message_box("Continue?", {"Yes", "No"}) != "Yes")
 #### Modal / synchronous backend
 
 ```cpp
-co_go::continuation<std::string>
+ca2co::continuation<std::string>
 co_show_message_box(std::string const& prompt,
                     std::initializer_list<std::string> const& choices)
 {
@@ -87,12 +87,12 @@ co_show_message_box(std::string const& prompt,
 (using `std::bind` ✅)
 
 ```cpp
-co_go::continuation<std::string>
+ca2co::continuation<std::string>
 co_show_message_box(std::string const& prompt,
                     std::initializer_list<std::string> const& choices)
 {
     using namespace std::placeholders;
-    co_return co_await co_go::callback_async<std::string>(
+    co_return co_await ca2co::callback_async<std::string>(
         std::bind(show_message_box_qml, prompt, choices, _1)
     );
 }
@@ -101,7 +101,7 @@ Here, `_1` represents the callback that `callback_async` uses to resume the coro
 
 ### ✅ Key Advantages
 
-`co_go::continuation<T>` provides:
+`ca2co::continuation<T>` provides:
 
 * ✅ Suspend & resume anywhere including on the UI thread
 * ✅ Zero callback nesting → linear readable control flow
@@ -119,7 +119,7 @@ You change **the implementation**, not **the caller**.
 
 | Library                                             | Primary Focus / Design Goal | Special Strength | Lazy vs Eager Execution | I/O / Executor Integration | Multi-Thread / Parallelism | Interop Difficulty w/ Legacy Callbacks |
 |-----------------------------------------------------|-----------------------------|------------------|-------------------------|----------------------------|----------------------------|----------------------------------------|
-| co_go                                               | Turn *callback-based (a)sync* APIs into `co_await` | ✅ Callback → `co_await` bridge | depends on callback | depends on wrapped API | depends on wrapped API | very easy; core purpose |
+| ca2co                                               | Turn *callback-based (a)sync* APIs into `co_await` | ✅ Callback → `co_await` bridge | depends on callback | depends on wrapped API | depends on wrapped API | very easy; core purpose |
 | [Boost.Cobalt](https://github.com/boostorg/cobalt)  | Coroutine-enabled async I/O with Boost.Asio | High-level async I/O primitives | mostly *eager* | excellent Asio integration | controlled / single-thread exec | no example found |
 | [cppcoro](https://github.com/lewissbaker/cppcoro)   | Generic coroutine primitives & algorithms | Flexible coroutine building blocks | mostly *lazy* | generic & plug-in friendly | moderate | no example found |
 | [libcoro](https://github.com/jbaldwin/libcoro)      |  Multi-threaded async runtime with schedulers + I/O | Large-scale parallel coroutine runtime | depends on awaitable | built-in I/O & schedulers | strong thread-pool parallelism | no example found |
@@ -129,12 +129,12 @@ You change **the implementation**, not **the caller**.
 
 ### Porting Synchronous APIs to Asynchronous Callback APIs
 
-`co_go::continuation` is not limited to UI workflows.
+`ca2co::continuation` is not limited to UI workflows.
 It can be used to modernize **any** blocking API — such as networking, filesystem, or communication protocols.
 
 A typical migration:
 
-* 1️⃣ Wrap existing synchronous APIs using `co_go::continuation`
+* 1️⃣ Wrap existing synchronous APIs using `ca2co::continuation`
 * 2️⃣ Update business logic to use `co_await`
 * 3️⃣ Replace the underlying implementation with async callbacks
 
@@ -152,10 +152,10 @@ std::string send_request_sync(std::string const& request)
 }
 ```
 
-#### Step 2 — Wrap API using `co_go::continuation`
+#### Step 2 — Wrap API using `ca2co::continuation`
 
 ```cpp
-co_go::continuation<std::string>
+ca2co::continuation<std::string>
 co_send_request(std::string const& request)
 {
     co_return send_request_sync(request);
@@ -165,7 +165,7 @@ co_send_request(std::string const& request)
 #### Step 3 — Application logic becomes linear async
 
 ```cpp
-co_go::continuation<void> protocol_flow()
+ca2co::continuation<void> protocol_flow()
 {
     auto hello = co_await co_send_request("HELLO");
     if (hello != "OK")
@@ -188,11 +188,11 @@ void send_request_async(
 Updated wrapper:
 
 ```cpp
-co_go::continuation<std::string>
+ca2co::continuation<std::string>
 co_send_request(std::string const& request)
 {
     using namespace std::placeholders;
-    co_return co_await co_go::callback_async<std::string>(
+    co_return co_await ca2co::callback_async<std::string>(
         std::bind(send_request_async, request, _1)
     );
 }
@@ -206,7 +206,7 @@ co_send_request(std::string const& request)
 
 ## Summary
 
-`co_go::continuation<T>` lets us:
+`ca2co::continuation<T>` lets us:
 
 * keep sequential UI-driven logic
 * port to async architectures cleanly
@@ -218,16 +218,16 @@ co_send_request(std::string const& request)
 
 ### Include and Basic Usage
 
-1. Include the `co_go` header:
+1. Include the `ca2co` header:
 
 ```cpp
-#include <co_go/continuation.hpp>
+#include <ca2co/continuation.hpp>
 ```
 
 2. Write coroutine-based UI logic:
 
 ```cpp
-co_go::continuation<void> run_flow()
+ca2co::continuation<void> run_flow()
 {
     if (co_await show_message_box("Proceed?", {"Yes", "No"}) != "Yes")
         co_return;
@@ -267,7 +267,7 @@ Cancellation behavior is entirely under the application's control.
 
 ## Thread Context & Safety
 
-`co_go::continuation` does **not** switch threads on its own.
+`ca2co::continuation` does **not** switch threads on its own.
 
 Where the coroutine resumes depends entirely on **where the callback is invoked**.
 

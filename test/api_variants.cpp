@@ -8,9 +8,9 @@
 #include <thread>
 
 #define CO_GO_CONTINUATION_TEST
-#include <co_go/continuation.hpp>
+#include <ca2co/continuation.hpp>
 
-// namespace co_go {
+// namespace ca2co {
 //
 //
 //
@@ -39,7 +39,7 @@
 // template<synchronisation sync_or_async, typename R, typename... Args >
 // class callback_api<sync_or_async, R(Args...)>;
 //
-//     co_go::callback_api<std::tuple<std::string, int>(std::string_view)>
+//     ca2co::callback_api<std::tuple<std::string, int>(std::string_view)>
 //
 // }
 //
@@ -58,11 +58,11 @@ void async_api_string_view_int(
     std::println("after call to continuation async_api");
   }};
 }
-co_go::continuation<std::string_view, int> co_async_api_string_view_int() {
-  co_return co_await co_go::callback_async<std::string_view, int>(
+ca2co::continuation<std::string_view, int> co_async_api_string_view_int() {
+  co_return co_await ca2co::callback_async<std::string_view, int>(
       fixture::async_api_string_view_int);
 };
-co_go::continuation<std::string_view, int> co_sync_api_string_view_int() {
+ca2co::continuation<std::string_view, int> co_sync_api_string_view_int() {
   co_return std::make_tuple<std::string_view, int>(std::string_view("xy"), 2);
 }
 
@@ -79,7 +79,7 @@ void async_api_int_loop(
   }};
 }
 auto co_async_api_int_loop() {
-  return co_go::callback_async<std::optional<std::generator<int>>>(
+  return ca2co::callback_async<std::optional<std::generator<int>>>(
       fixture::async_api_int_loop);
 };
 
@@ -96,16 +96,16 @@ auto co_async_api_int_loop() {
 // }
 
 static_assert(
-    !co_go::is_noexept_callback_api_v<decltype(async_api_string_view_int),
+    !ca2co::is_noexept_callback_api_v<decltype(async_api_string_view_int),
                                       std::tuple<std::string_view, int>>);
-static_assert(co_go::is_noexept_callback_api_v<
+static_assert(ca2co::is_noexept_callback_api_v<
               decltype(async_api_string_view_int), std::string_view, int>);
 }  // namespace fixture
 }  // namespace
 
 TEST_CASE("sync_api_string_view_int") {
   auto called = false;
-  [&] -> co_go::continuation<> {
+  [&] -> ca2co::continuation<> {
     auto [s, i] = co_await fixture::co_sync_api_string_view_int();
     CHECK(s == "xy");
     CHECK(i == 2);
@@ -116,8 +116,8 @@ TEST_CASE("sync_api_string_view_int") {
 
 TEST_CASE("async_api_string_view_int direct") {
   auto called = false;
-  [&] -> co_go::continuation<> {
-    auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
+  [&] -> ca2co::continuation<> {
+    auto [s, i] = co_await ca2co::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
     CHECK(s == "hello world");
     CHECK(i == 42);
@@ -129,7 +129,7 @@ TEST_CASE("async_api_string_view_int direct") {
 
 TEST_CASE("async_api_string_view_int indirect") {
   auto called = false;
-  [&] -> co_go::continuation<> {
+  [&] -> ca2co::continuation<> {
     auto [s, i] = co_await fixture::co_async_api_string_view_int();
     CHECK(s == "hello world");
     CHECK(i == 42);
@@ -141,7 +141,7 @@ TEST_CASE("async_api_string_view_int indirect") {
 
 TEST_CASE("async_api_int_loop") {
   auto called = false;
-  [&] -> co_go::continuation<> {
+  [&] -> ca2co::continuation<> {
     auto y = 0;
     for (auto i : *co_await fixture::co_async_api_int_loop()) {
       CHECK(i == y++);
@@ -155,8 +155,8 @@ TEST_CASE("async_api_int_loop") {
 
 // TEST_CASE("async_api_bool_double_to_string_view_int") {
 //   auto called = false;
-//   [&] -> co_go::continuation<> {
-//     auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
+//   [&] -> ca2co::continuation<> {
+//     auto [s, i] = co_await ca2co::callback_async<std::string_view, int>(
 //         fixture::async_api_bool_double_to_string_view_int, true, 3.14);
 //     CHECK(s == "hello world");
 //     CHECK(i == 42);

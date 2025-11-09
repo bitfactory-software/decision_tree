@@ -3,13 +3,13 @@ include(cmake/CPM.cmake)
 # Done as a function so that updates to variables like
 # CMAKE_CXX_FLAGS don't propagate out to other
 # targets
-function(cogoproject_setup_dependencies)
+function(ca2co_setup_dependencies)
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
 
-  if(NOT cogoproject_is_top)
-    message("co_go -> no dependecies required")
+  if(NOT ca2co_is_top)
+    message("ca2co -> no dependecies required")
     return()
   endif()
 

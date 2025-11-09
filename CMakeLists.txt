@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
 project(
-  cogoproject
+  ca2co
   VERSION 0.0.1
   DESCRIPTION ""
   HOMEPAGE_URL "%%myurl%%"
@@ -25,19 +25,19 @@ project(
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
-set(cogoproject_is_top)
+set(ca2co_is_top)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(cogoproject_is_top ON)
+  set(ca2co_is_top ON)
 endif()
-message("cogoproject_is_top: " ${cogoproject_is_top})
+message("ca2co_is_top: " ${ca2co_is_top})
 
-cogoproject_setup_options()
+ca2co_setup_options()
 
-cogoproject_global_options()
+ca2co_global_options()
 include(Dependencies.cmake)
-cogoproject_setup_dependencies(cogoproject_is_top)
+ca2co_setup_dependencies(ca2co_is_top)
 
-cogoproject_local_options()
+ca2co_local_options()
 
 # don't know if this should be set globally from here or not...
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -51,22 +51,22 @@ string(
             8
             GIT_SHORT_SHA)
 
-target_compile_features(cogoproject_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+target_compile_features(ca2co_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
-add_library(cogoproject::cogoproject_options ALIAS cogoproject_options)
-add_library(cogoproject::cogoproject_warnings ALIAS cogoproject_warnings)
+add_library(ca2co::ca2co_options ALIAS ca2co_options)
+add_library(ca2co::ca2co_warnings ALIAS ca2co_warnings)
 
-#add_library(cogoproject::cogoproject_options INTERFACE IMPORTED)
-#add_library(cogoproject::cogoproject_warnings INTERFACE IMPORTED)
+#add_library(ca2co::ca2co_options INTERFACE IMPORTED)
+#add_library(ca2co::ca2co_warnings INTERFACE IMPORTED)
 
 # configure files based on CMake configuration options
 add_subdirectory(configured_files)
 
-# Adding the co_go:
-add_subdirectory(co_go)
+# Adding the ca2co:
+add_subdirectory(ca2co)
 
 # Don't even look at tests if we're not top level
-if(NOT cogoproject_is_top)
+if(NOT ca2co_is_top)
   return()
 endif()
 
@@ -97,11 +97,11 @@ include(cmake/PackageProject.cmake)
 
 # Add other targets that you want installed here, by default we just package the one executable
 # we know we want to ship
-cogoproject_package_project(
+ca2co_package_project(
   TARGETS
-  co_go
-  cogoproject_options
-  cogoproject_warnings
+  ca2co
+  ca2co_options
+  ca2co_warnings
   # FIXME: this does not work! CK
   # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
 )

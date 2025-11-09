@@ -1,8 +1,8 @@
 > AI generated and reviewd
 
- # co_go::continuation — design and sequence examples
+ # ca2co::continuation — design and sequence examples
 
-This document explains how `co_go::continuation<R>` works and how it interacts with `continuation_awaiter` (the `callback` / `callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `co_go/continuation.hpp`.
+This document explains how `ca2co::continuation<R>` works and how it interacts with `continuation_awaiter` (the `callback` / `callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `ca2co/continuation.hpp`.
 
 ---
 

@@ -1,7 +1,7 @@
 include(CheckCXXCompilerFlag)
 
 macro(
-  cogoproject_enable_hardening
+  ca2co_enable_hardening
   target
   global
   ubsan_minimal_runtime)

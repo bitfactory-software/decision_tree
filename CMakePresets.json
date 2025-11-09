@@ -14,8 +14,8 @@
         "binaryDir": "${sourceDir}/out/build/${presetName}",
         "installDir": "${sourceDir}/out/install/${presetName}",
         "cacheVariables": {
-          "cogoproject_ENABLE_CPPCHECK": false,
-          "cogoproject_ENABLE_CLANG_TIDY": false
+          "ca2co_ENABLE_CPPCHECK": false,
+          "ca2co_ENABLE_CLANG_TIDY": false
         }
 
       },

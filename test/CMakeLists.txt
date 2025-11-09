@@ -7,9 +7,9 @@ project(CmakeConfigPackageTests LANGUAGES CXX)
 if(PROJECT_IS_TOP_LEVEL OR TEST_INSTALLED_VERSION)
   enable_testing()
 
-  find_package(cogoproject CONFIG REQUIRED) # for intro, project_options, ...
+  find_package(ca2co CONFIG REQUIRED) # for intro, project_options, ...
 
-  if(NOT TARGET cogoproject_options)
+  if(NOT TARGET ca2co_options)
     message(FATAL_ERROR "Required config package not found!")
     return() # be strictly paranoid for Template Janitor github action! CK
   endif()
@@ -22,9 +22,9 @@ include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
 add_executable(tests  api_variants.cpp continuation_test_sync_async.cpp continuation_test_sync_callback.cpp)
 target_link_libraries(
   tests
-  PRIVATE cogoproject::cogoproject_warnings
-          cogoproject::cogoproject_options
-          cogoproject::co_go
+  PRIVATE ca2co::ca2co_warnings
+          ca2co::ca2co_options
+          ca2co::ca2co
           Catch2::Catch2WithMain)
 
 if(WIN32 AND BUILD_SHARED_LIBS)

@@ -1,4 +1,4 @@
-function(cogoproject_check_libfuzzer_support var_name)
+function(ca2co_check_libfuzzer_support var_name)
   set(LibFuzzerTestSource
       "
 #include <cstdint>

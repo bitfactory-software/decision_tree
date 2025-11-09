@@ -3,7 +3,7 @@
 #include <functional>
 #include <variant>
 
-namespace co_go {
+namespace ca2co {
 
 #ifdef CO_GO_CONTINUATION_TEST
 static int continuation_promise_count = 0;
@@ -284,4 +284,4 @@ auto callback_async(auto&& api) {
 template <typename... R>
 void spawn([[maybe_unused]] continuation<R...>&& c) {}
 
-}  // namespace co_go
+}  // namespace ca2co
