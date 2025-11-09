@@ -140,7 +140,7 @@ A typical migration:
 
 ### Example: Converting a synchronous network protocol
 
-_Note:_ For a rewrite of a callback based asio example int ca2co look at the [asio_ca2co](https://github.com/bitfactory-software/asio_ca2co) example and compare the [callback](https://github.com/bitfactory-software/asio_ca2co/blob/master/chat_client.cpp) and the [ca2co coroutine](https://github.com/bitfactory-software/asio_ca2co/blob/master/ca2co_chat_client.cpp) variants of the echo_client.
+_Note:_ For a rewrite of a async asio callback example into ca2co coroutines look at the [asio_ca2co](https://github.com/bitfactory-software/asio_ca2co) to compare the [callback](https://github.com/bitfactory-software/asio_ca2co/blob/master/chat_client.cpp) and the [ca2co coroutine](https://github.com/bitfactory-software/asio_ca2co/blob/master/ca2co_chat_client.cpp) variants of the echo_client.
 
 #### Step 1 — Existing blocking API
 
