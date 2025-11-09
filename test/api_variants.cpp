@@ -1,60 +1,33 @@
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <functional>
-#include <future>
 #include <generator>
 #include <print>
 #include <ranges>
 #include <thread>
+#include <string_view>
+#include <tuple>
+#include <optional>
 
 #define CO_GO_CONTINUATION_TEST
 #include <ca2co/continuation.hpp>
 
-// namespace ca2co {
-//
-//
-//
-// template < typename... CallbackArgs,
-//           synchronisation sync_or_async = synchronisation::sync>
-//   requires(is_noexept_callback_api<R, Api>)
-// struct callback {
-//   bool await_ready() { return false; }
-//   void await_suspend(auto calling_coroutine) {
-//     calling_coroutine.promise().sync_ = sync_or_async ==
-//     synchronisation::sync; bool called = false; api_([this,
-//     calling_coroutine, called](const R& r) mutable {
-//       if (called) return;
-//       called = true;
-//       result_ = r;
-//       calling_coroutine.resume();
-//     });
-//   }
-//   R await_resume() { return result_; }
-//   const Api api_;
-//   R result_ = {};
-// };
-//
-// template<synchronisation sync_or_async, typename R, typename... Args >
-// class callback_api;
-// template<synchronisation sync_or_async, typename R, typename... Args >
-// class callback_api<sync_or_async, R(Args...)>;
-//
-//     ca2co::callback_api<std::tuple<std::string, int>(std::string_view)>
-//
-// }
-//
+using namespace std::chrono_literals;
+
 namespace {
 namespace fixture {
 
-std::thread a_thread;
+std::thread a_thread; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+constexpr auto short_break = 10ms;
+constexpr auto answer_number = 42;
 
 void async_api_string_view_int(
-    std::function<void(std::string_view, int)> callback) noexcept {
+    std::function<void(std::string_view, int)> const& callback) noexcept {
   a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(short_break);
     std::println("sleep on thread {}", std::this_thread::get_id());
-    callback("hello world", 42);
+    callback("hello world", answer_number);
     std::println("after call to continuation async_api");
   }};
 }
@@ -67,13 +40,13 @@ ca2co::continuation<std::string_view, int> co_sync_api_string_view_int() {
 }
 
 void async_api_int_loop(
-    std::function<void(std::optional<std::generator<int>>)> callback) noexcept {
+    std::function<void(std::optional<std::generator<int>>)> const& callback) noexcept {
   a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_for(short_break);
     std::println("sleep on thread {}", std::this_thread::get_id());
     callback([] -> std::generator<int> {
-      for (auto i : std::views::iota(0, 3)) co_yield i;
+      for (auto an_i : std::views::iota(0, 3)) co_yield an_i; // NOLINT
     }());
     std::println("after call to continuation async_api");
   }};
@@ -82,18 +55,6 @@ auto co_async_api_int_loop() {
   return ca2co::callback_async<std::optional<std::generator<int>>>(
       fixture::async_api_int_loop);
 };
-
-// void async_api_bool_double_to_string_view_int(
-//     bool, int, std::function<void(std::string_view, int)> callback) noexcept
-//     {
-//   a_thread = std::thread{[=] {
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(10ms);
-//     std::println("sleep on thread {}", std::this_thread::get_id());
-//     callback("hello world", 42);
-//     std::println("after call to continuation async_api");
-//   }};
-// }
 
 static_assert(
     !ca2co::is_noexept_callback_api_v<decltype(async_api_string_view_int),
@@ -105,10 +66,10 @@ static_assert(ca2co::is_noexept_callback_api_v<
 
 TEST_CASE("sync_api_string_view_int") {
   auto called = false;
-  [&] -> ca2co::continuation<> {
-    auto [s, i] = co_await fixture::co_sync_api_string_view_int();
-    CHECK(s == "xy");
-    CHECK(i == 2);
+  [&] -> ca2co::continuation<> { // NOLINT
+    auto [a_s, an_i] = co_await fixture::co_sync_api_string_view_int();
+    CHECK(a_s == "xy");
+    CHECK(an_i == 2);
     called = true;
   }();
   CHECK(called);
@@ -116,11 +77,11 @@ TEST_CASE("sync_api_string_view_int") {
 
 TEST_CASE("async_api_string_view_int direct") {
   auto called = false;
-  [&] -> ca2co::continuation<> {
-    auto [s, i] = co_await ca2co::callback_async<std::string_view, int>(
+  [&] -> ca2co::continuation<> { // NOLINT
+    auto [a_s, an_i] = co_await ca2co::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
-    CHECK(s == "hello world");
-    CHECK(i == 42);
+    CHECK(a_s == "hello world");
+    CHECK(an_i == fixture::answer_number);
     called = true;
   }();
   fixture::a_thread.join();
@@ -129,10 +90,10 @@ TEST_CASE("async_api_string_view_int direct") {
 
 TEST_CASE("async_api_string_view_int indirect") {
   auto called = false;
-  [&] -> ca2co::continuation<> {
-    auto [s, i] = co_await fixture::co_async_api_string_view_int();
-    CHECK(s == "hello world");
-    CHECK(i == 42);
+  [&] -> ca2co::continuation<> { // NOLINT
+    auto [a_s, an_i] = co_await fixture::co_async_api_string_view_int();
+    CHECK(a_s == "hello world");
+    CHECK(an_i == fixture::answer_number);
     called = true;
   }();
   fixture::a_thread.join();
@@ -141,10 +102,10 @@ TEST_CASE("async_api_string_view_int indirect") {
 
 TEST_CASE("async_api_int_loop") {
   auto called = false;
-  [&] -> ca2co::continuation<> {
+  [&] -> ca2co::continuation<> { // NOLINT
     auto y = 0;
-    for (auto i : *co_await fixture::co_async_api_int_loop()) {
-      CHECK(i == y++);
+    for (auto an_i : *co_await fixture::co_async_api_int_loop()) {
+      CHECK(an_i == y++);
     }
     CHECK(y == 3);
     called = true;
@@ -152,15 +113,3 @@ TEST_CASE("async_api_int_loop") {
   fixture::a_thread.join();
   CHECK(called);
 }
-
-// TEST_CASE("async_api_bool_double_to_string_view_int") {
-//   auto called = false;
-//   [&] -> ca2co::continuation<> {
-//     auto [s, i] = co_await ca2co::callback_async<std::string_view, int>(
-//         fixture::async_api_bool_double_to_string_view_int, true, 3.14);
-//     CHECK(s == "hello world");
-//     CHECK(i == 42);
-//     called = true;
-//   }();
-//   CHECK(called);
-// }

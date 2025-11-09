@@ -3,24 +3,28 @@
 #include <functional>
 #include <future>
 #include <print>
+#include <thread>
 
 #define CO_GO_CONTINUATION_TEST
 #include <ca2co/continuation.hpp>
 
+using namespace std::chrono_literals;
+
 namespace {
-int step = 1;
+int step = 1;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+constexpr auto short_break = 10ms;
+constexpr auto answer_number = 42;
 
 // + lib callback style
-void int_callback_api(std::function<void(int)> const& callback) noexcept {
+void int_callback_api(                                    // NOLINT
+    std::function<void(int)> const& callback) noexcept {  // NOLINT
   std::println("before callback");
-  callback(42);
+  callback(answer_number);
   std::println("after callback");
 };
 // - lib callback style
 // + lib wrapped for coro style
-auto int_recieve_coro() {
-  return ca2co::callback_sync<int>(int_callback_api);
-};
+auto int_recieve_coro() { return ca2co::callback_sync<int>(int_callback_api); };
 // - lib wrapped for coro style
 ca2co::continuation<int> int_recieve_coro_indirect() {
   auto x = co_await ca2co::callback_sync<int>(int_callback_api);
@@ -37,18 +41,18 @@ TEST_CASE("int [continuation]") {
   CHECK(step == 1);
   int_callback_api([&](int _42) {
     std::println("recieving 42");
-    CHECK(42 == _42);
+    CHECK(answer_number == _42);
   });
   // - app callback style
 
-  [&] -> ca2co::continuation<> {
+  [&] -> ca2co::continuation<> {  // NOLINT
     // call coro style must exist inside a coro
     auto _42 = co_await int_recieve_coro();
     std::println("recieving 42");
-    CHECK(42 == _42);
+    CHECK(answer_number == _42);
   }();
 
-  [&] -> ca2co::continuation<> {
+  [&] -> ca2co::continuation<> {  // NOLINT
     // call coro style must exist inside a coro
     auto _43 = co_await int_recieve_coro_indirect();
     std::println("recieving 43");
@@ -58,11 +62,10 @@ TEST_CASE("int [continuation]") {
 
 namespace {
 void async_api(std::function<void(int)> const& continuation) noexcept {
-  auto unused = std::async(std::launch::async, [=] {
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(10ms);
+  [[maybe_unused]] auto unused = std::async(std::launch::async, [=] {
+    std::this_thread::sleep_for(short_break);
     std::println("sleep on thread {}", std::this_thread::get_id());
-    continuation(42);
+    continuation(answer_number);
     std::println("after call to continuation async_api");
   });
 }
@@ -71,7 +74,7 @@ ca2co::continuation<int> async_api_coro() {
 };
 ca2co::continuation<int> async_api_coro_indirect() {
   auto x = co_await async_api_coro();
-  CHECK(x == 42);
+  CHECK(x == answer_number);
   co_return x + 1;
 };
 }  // namespace
@@ -79,12 +82,12 @@ ca2co::continuation<int> async_api_coro_indirect() {
 TEST_CASE("int async [continuation]") {
   auto id_start = std::this_thread::get_id();
   auto called = false;
-  [&] -> ca2co::continuation<> {
+  [&] -> ca2co::continuation<> {  // NOLINT
     // call coro style must exist inside a coro
     auto _42 = co_await async_api_coro();  // blocks!
     std::println("recieving 42");
     called = true;
-    CHECK(42 == _42);
+    CHECK(answer_number == _42);
     CHECK(id_start == std::this_thread::get_id());
   }();
   CHECK(called);
@@ -93,7 +96,7 @@ TEST_CASE("int async [continuation]") {
 TEST_CASE("int async indirect [continuation]") {
   auto id_start = std::this_thread::get_id();
   auto called = false;
-  [&] -> ca2co::continuation<> {
+  [&] -> ca2co::continuation<> {  // NOLINT
     // call coro style must exist inside a coro
     auto _43 = co_await async_api_coro_indirect();
     std::println("recieving 43");
@@ -103,4 +106,3 @@ TEST_CASE("int async indirect [continuation]") {
   }();
   CHECK(called);
 }
-
