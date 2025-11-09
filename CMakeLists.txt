@@ -19,7 +19,7 @@ project(
   ca2co
   VERSION 0.0.1
   DESCRIPTION ""
-  HOMEPAGE_URL "%%myurl%%"
+  HOMEPAGE_URL "https://github.com/bitfactory-software/ca2co"
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
