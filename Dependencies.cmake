@@ -14,6 +14,7 @@ function(ca2co_setup_dependencies)
   endif()
 
   message("cpm add packages...") 
+  set(CMAKE_FOLDER __3rdParty)
 
 #  if(NOT TARGET fmtlib::fmtlib)
 #    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
@@ -26,5 +27,7 @@ function(ca2co_setup_dependencies)
   if(NOT TARGET tools::tools)
     cpmaddpackage("gh:lefticus/tools#update_build_system")
   endif()
+
+  unset(CMAKE_FOLDER)
 
 endfunction()
