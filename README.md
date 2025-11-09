@@ -62,7 +62,7 @@ This is where **continuations** come in.
 With `ca2co::continuation<T>`, you can keep the sequential structure:
 
 ```cpp
-if (co_await show_message_box("Continue?", {"Yes", "No"}) != "Yes")
+if (co_await co_show_message_box("Continue?", {"Yes", "No"}) != "Yes")
     co_return;
 // continue(!) with further processing
 ```
