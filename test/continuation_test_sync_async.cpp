@@ -247,8 +247,8 @@ TEST_CASE(  // NOLINT
   {
     bool resumed = false;
     ca2co::spawn(
-        [&]
-        -> ca2co::
+        [&] // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
+        -> ca2co:: // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
             continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
               auto id_start = std::this_thread::get_id();
               auto error = co_await fixture::
@@ -285,7 +285,7 @@ TEST_CASE("MoveConstructContinuation") {
 #pragma warning(push)             // NOLINT(clang-diagnostic-unknown-pragmas)
 #pragma warning(disable : 26800)  // NOLINT(clang-diagnostic-unknown-pragmas)
   CHECK(
-      !original
+      !original  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved)
            .coroutine());  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved)
 #pragma warning(pop)  // NOLINT(clang-diagnostic-unknown-pragmas)
   CHECK(movedTo.coroutine());
