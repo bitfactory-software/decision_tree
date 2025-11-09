@@ -1,4 +1,4 @@
-# ca2co: Opaque Continuation Coroutine for C++
+# ca2co: Wrap Callbacks into a Coroutine for C++
 
 Write clean **sequential** code — run it on **callback-based** synchronous and asynchronous systems.
 
