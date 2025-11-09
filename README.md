@@ -117,10 +117,10 @@ You change **the implementation**, not **the caller**.
 
 | Library                                             | Primary Focus / Design Goal | Special Strength | Lazy vs Eager Execution | I/O / Executor Integration | Multi-Thread / Parallelism | Interop Difficulty w/ Legacy Callbacks |
 |-----------------------------------------------------|-----------------------------|------------------|-------------------------|----------------------------|----------------------------|----------------------------------------|
-| ca2co                                               | Turn *callback-based (a)sync* APIs into `co_await` | ✅ Callback → `co_await` bridge | depends on callback | depends on wrapped API | depends on wrapped API | very easy; core purpose |
+| ca2co                                               | Turn *callback-based (a)sync* APIs into `co_await`. ✅ Scheduler agnostic! | ✅ Callback → `co_await` bridge | *eager* | depends on wrapped API | depends on wrapped API | very easy; core purpose |
 | [Boost.Cobalt](https://github.com/boostorg/cobalt)  | Coroutine-enabled async I/O with Boost.Asio | High-level async I/O primitives | mostly *eager* | excellent Asio integration | controlled / single-thread exec | no example found |
 | [cppcoro](https://github.com/lewissbaker/cppcoro)   | Generic coroutine primitives & algorithms | Flexible coroutine building blocks | mostly *lazy* | generic & plug-in friendly | moderate | no example found |
-| [libcoro](https://github.com/jbaldwin/libcoro)      |  Multi-threaded async runtime with schedulers + I/O | Large-scale parallel coroutine runtime | depends on awaitable | built-in I/O & schedulers | strong thread-pool parallelism | no example found |
+| [libcoro](https://github.com/jbaldwin/libcoro)      | Multi-threaded async runtime with schedulers + I/O | Large-scale parallel coroutine runtime | depends on awaitable | built-in I/O & schedulers | strong thread-pool parallelism | no example found |
 
 
 ---
