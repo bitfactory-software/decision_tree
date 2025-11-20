@@ -11,7 +11,7 @@ namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
 using input_t =
     decision_tree::input<std::string, std::string, bool, int, std::string>;
-input_t rows{{"Slashdot", "USA", true, 18, "None"},
+const input_t::rows_t rows{{"Slashdot", "USA", true, 18, "None"},
              {"Google", "France", true, 23, "Premium"},
              {"Digg", "USA", true, 24, "Basic"},
              {"Kiwitobes", "France", true, 23, "Basic"},
@@ -29,8 +29,8 @@ input_t rows{{"Slashdot", "USA", true, 18, "None"},
 
 }  // namespace
 
-TEST_CASE("divide_table_column") {
-  auto split = rows.divide_table_column<2>(true);
+TEST_CASE("split_table_by_column_value") {
+  auto split = input_t::split_table_by_column_value<2>(rows, true);
 
   CHECK(split[0].size() == 8);
   std::println("split[0] {}", split[0]);
@@ -58,14 +58,14 @@ TEST_CASE("divide_table_column") {
 }
 
 TEST_CASE("result_counts") {
-  auto counts = rows.result_counts();
+  auto counts = input_t::result_counts(rows);
   CHECK(counts.size() == 3);
   CHECK(counts["None"] == 6);
   CHECK(counts["Basic"] == 6);
   CHECK(counts["Premium"] == 3);
 
-  auto impurity = rows.gini_impurity();
+  auto impurity = input_t::gini_impurity(rows);
   CHECK_THAT(impurity, WithinAbs(0.64, 0.00000001));
-  auto e = rows.entropy();
+  auto e = input_t::entropy(rows);
   CHECK_THAT(e, WithinAbs(1.52192809488736214, 0.00000001));
 }
