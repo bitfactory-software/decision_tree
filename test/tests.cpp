@@ -66,4 +66,6 @@ TEST_CASE("result_counts") {
 
   auto impurity = rows.gini_impurity();
   CHECK_THAT(impurity, WithinAbs(0.64, 0.00000001));
+  auto e = rows.entropy();
+  CHECK_THAT(e, WithinAbs(1.52192809488736214, 0.00000001));
 }

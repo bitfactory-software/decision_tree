@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <map>
 #include <set>
 #include <tuple>
@@ -56,6 +57,17 @@ struct input {
       for (auto const& [k2, count2] : counts)
         if (k1 != k2) impurity += (count1 / total) * (count2 / total);
     return impurity;
+  }
+
+  auto entropy() const {
+    double total = static_cast<double>(rows.size());
+    auto counts = result_counts();
+    auto e = 0.0;
+    for (auto const& [k, count] : counts) {
+      auto p = count / total;
+      e -= p * std::log2(p);
+    }
+    return e;
   }
 };
 
