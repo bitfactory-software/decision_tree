@@ -1,4 +1,4 @@
-macro(ca2co_enable_ipo)
+macro(decision_tree_enable_ipo)
   include(CheckIPOSupported)
   check_ipo_supported(RESULT result OUTPUT output)
   if(result)

@@ -14,8 +14,9 @@
         "binaryDir": "${sourceDir}/out/build/${presetName}",
         "installDir": "${sourceDir}/out/install/${presetName}",
         "cacheVariables": {
-          "ca2co_ENABLE_CPPCHECK": true,
-          "ca2co_ENABLE_CLANG_TIDY": true
+          "decision_tree_ENABLE_CPPCHECK": true,
+          "decision_tree_ENABLE_CLANG_TIDY": true,
+          "decision_tree_ENABLE_SANITIZER_ADDRESS": false
         }
 
       },
@@ -37,10 +38,11 @@
                 "value": "host=x64",
                 "strategy": "external"
             },
-            "cacheVariables": {
-                "ENABLE_CPPCHECK_DEFAULT": "FALSE",
-                "ENABLE_CLANG_TIDY_DEFAULT": "FALSE"
-            }
+          "cacheVariables": {
+            "decision_tree_ENABLE_CPPCHECK": true,
+            "decision_tree_ENABLE_CLANG_TIDY": true,
+            "decision_tree_ENABLE_SAN": true
+          }
         },
         {
           "name": "conf-unixlike-common",
@@ -74,8 +76,8 @@
             "CMAKE_CXX_COMPILER": "cl",
             "CMAKE_BUILD_TYPE": "Debug",
             "ENABLE_DEVELOPER_MODE": "ON",
-            "ca2co_ENABLE_CPPCHECK": false,
-            "ca2co_ENABLE_CLANG_TIDY": false
+            "decision_tree_ENABLE_CPPCHECK": false,
+            "decision_tree_ENABLE_CLANG_TIDY": false
           }
         },
         {

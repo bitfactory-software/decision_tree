@@ -1,5 +1,5 @@
 # Enable cache if available
-function(ca2co_enable_cache)
+function(decision_tree_enable_cache)
   set(CACHE_OPTION
       "ccache"
       CACHE STRING "Compiler cache to be used")

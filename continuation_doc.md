@@ -1,8 +1,8 @@
 > AI generated and reviewd
 
- # ca2co::continuation — design and sequence examples
+ # decision_tree::continuation — design and sequence examples
 
-This document explains how `ca2co::continuation<R>` works and how it interacts with `continuation_awaiter` (the `callback` / `callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `ca2co/continuation.hpp`.
+This document explains how `decision_tree::continuation<R>` works and how it interacts with `continuation_awaiter` (the `callback` / `callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `decision_tree/continuation.hpp`.
 
 ---
 

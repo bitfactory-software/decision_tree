@@ -1,10 +1,10 @@
-# ca2co
+# decision_tree
 
-[![ci](https://github.com/bitfactory-software/ca2co/actions/workflows/ci.yml/badge.svg)](https://github.com/bitfactory-software/ca2co/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/bitfactory-software/ca2co/branch/main/graph/badge.svg)](https://codecov.io/gh/bitfactory-software/ca2co)
-[![CodeQL](https://github.com/bitfactory-software/ca2co/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/bitfactory-software/ca2co/actions/workflows/codeql-analysis.yml)
+[![ci](https://github.com/bitfactory-software/decision_tree/actions/workflows/ci.yml/badge.svg)](https://github.com/bitfactory-software/decision_tree/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bitfactory-software/decision_tree/branch/main/graph/badge.svg)](https://codecov.io/gh/bitfactory-software/decision_tree)
+[![CodeQL](https://github.com/bitfactory-software/decision_tree/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/bitfactory-software/decision_tree/actions/workflows/codeql-analysis.yml)
 
-## About ca2co
+## About decision_tree
 
 
 

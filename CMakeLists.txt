@@ -16,28 +16,28 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set the project name and language
 project(
-  ca2co
+  decision_tree
   VERSION 0.0.1
   DESCRIPTION ""
-  HOMEPAGE_URL "https://github.com/bitfactory-software/ca2co"
+  HOMEPAGE_URL "https://github.com/bitfactory-software/decision_tree"
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
-set(ca2co_is_top)
+set(decision_tree_is_top)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(ca2co_is_top ON)
+  set(decision_tree_is_top ON)
 endif()
-message("ca2co_is_top: " ${ca2co_is_top})
+message("decision_tree_is_top: " ${decision_tree_is_top})
 
-ca2co_setup_options()
+decision_tree_setup_options()
 
-ca2co_global_options()
+decision_tree_global_options()
 include(Dependencies.cmake)
-ca2co_setup_dependencies(ca2co_is_top)
+decision_tree_setup_dependencies(decision_tree_is_top)
 
-ca2co_local_options()
+decision_tree_local_options()
 
 # don't know if this should be set globally from here or not...
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -51,22 +51,20 @@ string(
             8
             GIT_SHORT_SHA)
 
-target_compile_features(ca2co_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+add_library(decision_tree::decision_tree_options ALIAS decision_tree_options)
+add_library(decision_tree::decision_tree_warnings ALIAS decision_tree_warnings)
 
-add_library(ca2co::ca2co_options ALIAS ca2co_options)
-add_library(ca2co::ca2co_warnings ALIAS ca2co_warnings)
-
-#add_library(ca2co::ca2co_options INTERFACE IMPORTED)
-#add_library(ca2co::ca2co_warnings INTERFACE IMPORTED)
+#add_library(decision_tree::decision_tree_options INTERFACE IMPORTED)
+#add_library(decision_tree::decision_tree_warnings INTERFACE IMPORTED)
 
 # configure files based on CMake configuration options
 add_subdirectory(configured_files)
 
-# Adding the ca2co:
-add_subdirectory(ca2co)
+# Adding the decision_tree:
+add_subdirectory(decision_tree)
 
 # Don't even look at tests if we're not top level
-if(NOT ca2co_is_top)
+if(NOT decision_tree_is_top)
   return()
 endif()
 
@@ -97,11 +95,11 @@ include(cmake/PackageProject.cmake)
 
 # Add other targets that you want installed here, by default we just package the one executable
 # we know we want to ship
-ca2co_package_project(
+decision_tree_package_project(
   TARGETS
-  ca2co
-  ca2co_options
-  ca2co_warnings
+  decision_tree
+  decision_tree_options
+  decision_tree_warnings
   # FIXME: this does not work! CK
   # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
 )

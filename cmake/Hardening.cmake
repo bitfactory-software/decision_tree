@@ -1,7 +1,7 @@
 include(CheckCXXCompilerFlag)
 
 macro(
-  ca2co_enable_hardening
+  decision_tree_enable_hardening
   target
   global
   ubsan_minimal_runtime)

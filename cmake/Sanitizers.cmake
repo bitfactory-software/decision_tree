@@ -1,5 +1,5 @@
 function(
-  ca2co_enable_sanitizers
+  decision_tree_enable_sanitizers
   project_name
   ENABLE_SANITIZER_ADDRESS
   ENABLE_SANITIZER_LEAK
