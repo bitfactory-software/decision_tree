@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <set>
 #include <map>
+#include <set>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -46,6 +46,16 @@ struct input {
     std::map<predict_t, int> counts;
     for (auto const& row : rows) ++counts[std::get<predict_column>(row)];
     return counts;
+  }
+
+  auto gini_impurity() const {
+    double total = static_cast<double>(rows.size());
+    auto counts = result_counts();
+    auto impurity = 0.0;
+    for (auto const& [k1, count1] : counts)
+      for (auto const& [k2, count2] : counts)
+        if (k1 != k2) impurity += (count1 / total) * (count2 / total);
+    return impurity;
   }
 };
 
