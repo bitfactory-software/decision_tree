@@ -43,7 +43,7 @@ struct to_variant<std::tuple<Ts...>> {
 }  // namespace detail
 
 template <typename... Values>
-struct input {
+struct data {
   // types
   using row_t = std::tuple<Values...>;
   using rows_t = std::vector<row_t>;
@@ -69,12 +69,6 @@ struct input {
     };
     std::variant<children, result_t> data;
   };
-
-  // data
-  rows_t rows;
-
-  input() = default;
-  input(std::initializer_list<row_t> const& init) : rows(init) {}
 
   template <std::size_t I, typename V>
   static constexpr bool splits(row_t const& row, V const& value) {

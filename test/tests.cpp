@@ -9,9 +9,9 @@ using namespace Catch::Matchers;
 
 namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
-using input_t =
-    decision_tree::input<std::string, std::string, bool, int, std::string>;
-const input_t::rows_t rows{{"Slashdot", "USA", true, 18, "None"},
+using data_set =
+    decision_tree::data<std::string, std::string, bool, int, std::string>;
+const data_set::rows_t test_data{{"Slashdot", "USA", true, 18, "None"},
              {"Google", "France", true, 23, "Premium"},
              {"Digg", "USA", true, 24, "Basic"},
              {"Kiwitobes", "France", true, 23, "Basic"},
@@ -30,11 +30,11 @@ const input_t::rows_t rows{{"Slashdot", "USA", true, 18, "None"},
 }  // namespace
 
 TEST_CASE("split_table_by_column_value") {
-  auto split = input_t::split_table_by_column_value<2>(rows, true);
+  auto split = data_set::split_table_by_column_value<2>(test_data, true);
 
   CHECK(split[0].size() == 8);
   std::println("split[0] {}", split[0]);
-  input_t::rows_t expected_0 = {{"Slashdot", "USA", true, 18, "None"},
+  data_set::rows_t expected_0 = {{"Slashdot", "USA", true, 18, "None"},
                                 {"Google", "France", true, 23, "Premium"},
                                 {"Digg", "USA", true, 24, "Basic"},
                                 {"Kiwitobes", "France", true, 23, "Basic"},
@@ -47,7 +47,7 @@ TEST_CASE("split_table_by_column_value") {
 
   CHECK(split[1].size() == 7);
   std::println("split[1] {}", split[1]);
-  input_t::rows_t expected_1 = {{"Google", "UK", false, 21, "Premium"},
+  data_set::rows_t expected_1 = {{"Google", "UK", false, 21, "Premium"},
                                 {"(direct)", "UK", false, 21, "Basic"},
                                 {"Google", "USA", false, 24, "Premium"},
                                 {"Digg", "USA", false, 18, "None"},
@@ -58,14 +58,14 @@ TEST_CASE("split_table_by_column_value") {
 }
 
 TEST_CASE("result_counts") {
-  auto counts = input_t::result_counts(rows);
+  auto counts = data_set::result_counts(test_data);
   CHECK(counts.size() == 3);
   CHECK(counts["None"] == 6);
   CHECK(counts["Basic"] == 6);
   CHECK(counts["Premium"] == 3);
 
-  auto impurity = input_t::gini_impurity(rows);
+  auto impurity = data_set::gini_impurity(test_data);
   CHECK_THAT(impurity, WithinAbs(0.64, 0.00000001));
-  auto e = input_t::entropy(rows);
+  auto e = data_set::entropy(test_data);
   CHECK_THAT(e, WithinAbs(1.52192809488736214, 0.00000001));
 }
