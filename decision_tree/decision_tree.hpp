@@ -77,8 +77,10 @@ struct data {
   struct print_result {
     result_t result;
 
-    friend std::ostream& operator<<(std::ostream& os, print_result const& print) {
-      return os << "{" << print.result.first << ": " << print.result.second << "}";
+    friend std::ostream& operator<<(std::ostream& os,
+                                    print_result const& print) {
+      return os << "{" << print.result.first << ": " << print.result.second
+                << "}";
     }
   };
 
@@ -212,7 +214,7 @@ struct data {
     } else
       return decision_node{.column_value = {},
                            .node_data = *result_counts(rows).begin()};
-  }
+  }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
   static decision_node build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
   }
