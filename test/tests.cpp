@@ -77,7 +77,7 @@ TEST_CASE("result_counts") {
 
 TEST_CASE("build_tree and classify") {
   auto tree = data_set::build_tree(test_data);
-  std::cout << data_set::print_node(tree) << "\n";
+  std::cout << data_set::print_node(tree, "") << "\n";
 
   static_assert(std::same_as<data_set::observation_t,
                              std::tuple<std::string, std::string, bool, int>>);
