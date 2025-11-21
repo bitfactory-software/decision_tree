@@ -17,8 +17,10 @@ Checks: "*,
         -misc-use-anonymous-namespace,
         -misc-use-internal-linkage,
         -cppcoreguidelines-avoid-magic-numbers,
+        -readability-magic-numbers,
         -hicpp-braces-around-statements,
-        -readability-braces-around-statements
+        -readability-braces-around-statements,
+        -cert-err58-cpp
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
