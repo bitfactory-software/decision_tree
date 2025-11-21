@@ -75,12 +75,16 @@ struct data {
   using values_variant_t = typename detail::to_variant<unique_tuple_t>::type;
 
   struct print_result {
-    result_t result;
+    result_counts_t const& result_counts;
 
     friend std::ostream& operator<<(std::ostream& os,
                                     print_result const& print) {
-      return os << "{" << print.result.first << ": " << print.result.second
-                << "}";
+      std::string seperator;
+      os << "{";
+      for (auto result_count : print.result_counts)
+        os << std::exchange(seperator, ", ") << result_count.first << ": "
+           << result_count.second;
+      return os << "}";
     }
   };
 
@@ -99,7 +103,7 @@ struct data {
   struct children_t {
     std::unique_ptr<decision_node> true_path, false_path;
   };
-  using node_data_t = std::variant<children_t, result_t>;
+  using node_data_t = std::variant<children_t, result_counts_t>;
   struct decision_node {
     column_value_t column_value;
     node_data_t node_data;
@@ -109,7 +113,7 @@ struct data {
     decision_node const& node;
     std::string indent;
     friend std::ostream& operator<<(std::ostream& os, print_node const& p) {
-      if (auto result = std::get_if<result_t>(&p.node.node_data)) {
+      if (auto result = std::get_if<result_counts_t>(&p.node.node_data)) {
         return os << print_result{*result} << "\n";
       } else {
         auto const& children = std::get<children_t>(p.node.node_data);
@@ -213,7 +217,7 @@ struct data {
                   build_tree(best_gain.split_sets[1], score_function))}}};
     } else
       return decision_node{.column_value = {},
-                           .node_data = *result_counts(rows).begin()};
+                           .node_data = result_counts(rows)};
   }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
   static decision_node build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
@@ -234,15 +238,28 @@ struct data {
     }
   }
 
-  static result_t classify(decision_node const& tree,
-                           observation_t const& observation) {
-    if (auto result = std::get_if<result_t>(&tree.node_data)) return *result;
+  static result_counts_t classify(decision_node const& tree,
+                                  observation_t const& observation) {
+    if (auto result = std::get_if<result_counts_t>(&tree.node_data))
+      return *result;
     auto const& children = std::get<children_t>(tree.node_data);
     if (take_true_branch<0>(tree.column_value, observation))
       return classify(*children.true_path, observation);
     else
       return classify(*children.false_path, observation);
   }
+
+  // static decision_node prune(decision_node const& tree, double min_gain) {
+  //   if (auto result = std::get_if<result_t>(&tree.node_data))
+  //     return decision_node{tree.column_value, *result};
+
+  //  if (auto* children = std::get_if<children_t>(&tree.node_data)) {
+  //    children->true_branch = std::make_unique<decision_node>(
+  //        prune(*children->true_branch, min_gain));
+  //    children->false_branch = std::make_unique<decision_node>(
+  //        prune(*children->false_branch, min_gain));
+  //  }
+  //}
 };
 
 }  // namespace decision_tree

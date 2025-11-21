@@ -83,5 +83,5 @@ TEST_CASE("build_tree and classify") {
                              std::tuple<std::string, std::string, bool, int>>);
   auto prediction = data_set::classify(tree, {"direct", "USA", true, 5});
   std::cout << data_set::print_result(prediction) << "\n";
-  CHECK(prediction == data_set::result_t{"basic", 3});
+  CHECK(*prediction.begin() == data_set::result_t{"basic", 3});
 }
