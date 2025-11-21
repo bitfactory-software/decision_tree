@@ -34,6 +34,27 @@ template <typename... Ts>
 struct to_variant<std::tuple<Ts...>> {
   using type = std::variant<Ts...>;
 };
+
+template <class Tuple>
+struct remove_last;
+
+template <>
+struct remove_last<std::tuple<>>;  // Define as you wish or leave undefined
+
+template <class... Args>
+struct remove_last<std::tuple<Args...>> {
+ private:
+  using Tuple = std::tuple<Args...>;
+
+  template <std::size_t... n>
+  static std::tuple<std::tuple_element_t<n, Tuple>...> extract(
+      std::index_sequence<n...>);
+
+ public:
+  using type =
+      decltype(extract(std::make_index_sequence<sizeof...(Args) - 1>()));
+};
+
 }  // namespace detail
 
 template <typename... Values>
@@ -47,9 +68,19 @@ struct data {
   using predict_t = std::tuple_element_t<predict_column, row_t>;
   using result_counts_t = std::map<predict_t, int>;
   using split_sets_t = std::array<rows_t, 2>;
+  using observation_t =
+      typename detail::remove_last<std::tuple<Values...>>::type;
   using result_t = typename result_counts_t::value_type;
   using unique_tuple_t = typename detail::unique<std::tuple<>, Values...>::type;
   using values_variant_t = typename detail::to_variant<unique_tuple_t>::type;
+
+  struct print_result {
+    result_t result;
+
+    friend std::ostream& operator<<(std::ostream& os, print_result const& print) {
+      return os << "{" << print.result.first << ": " << print.result.second << "}";
+    }
+  };
 
   struct column_value_t {
     std::size_t column = {};
@@ -72,26 +103,26 @@ struct data {
     node_data_t node_data;
   };
 
-  struct print {
+  struct print_node {
     decision_node const& node;
     std::string indent;
-    friend std::ostream& operator<<(std::ostream& os, print const& p) {
+    friend std::ostream& operator<<(std::ostream& os, print_node const& p) {
       if (auto result = std::get_if<result_t>(&p.node.node_data)) {
-        return os << "{" << result->first << ": " << result->second << "}\n";
+        return os << print_result{*result} << "\n";
       } else {
         auto const& children = std::get<children_t>(p.node.node_data);
         os << p.node.column_value;
         os << p.indent << "T-> ";
-        os << print{*children.true_path, p.indent + "   "};
+        os << print_node{*children.true_path, p.indent + "   "};
         os << p.indent << "F-> ";
-        os << print{*children.false_path, p.indent + "   "};
+        os << print_node{*children.false_path, p.indent + "   "};
         return os;
       }
     }
   };
 
   template <std::size_t I, typename V>
-  static constexpr bool splits(row_t const& row, V const& value) {
+  static constexpr bool splits(auto const& row, V const& value) {
     if constexpr (std::is_arithmetic_v<V>) {
       return std::get<I>(row) >= value;
     } else {
@@ -184,6 +215,31 @@ struct data {
   }
   static decision_node build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
+  }
+
+  template <std::size_t I>
+  static bool take_true_branch(column_value_t column_value,
+                               observation_t const& observation) {
+    if constexpr (I < std::tuple_size_v<observation_t>) {
+      if (column_value.column > I)
+        return take_true_branch<I + 1>(column_value, observation);
+
+      return splits<I>(
+          observation,
+          std::get<std::tuple_element_t<I, observation_t>>(column_value.value));
+    } else {
+      return false;  // should never be reached
+    }
+  }
+
+  static result_t classify(decision_node const& tree,
+                           observation_t const& observation) {
+    if (auto result = std::get_if<result_t>(&tree.node_data)) return *result;
+    auto const& children = std::get<children_t>(tree.node_data);
+    if (take_true_branch<0>(tree.column_value, observation))
+      return classify(*children.true_path, observation);
+    else
+      return classify(*children.false_path, observation);
   }
 };
 
