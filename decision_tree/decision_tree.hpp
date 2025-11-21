@@ -182,7 +182,7 @@ struct data {
       return decision_node{.column_value = {},
                            .node_data = *result_counts(rows).begin()};
   }
-  static decision_node build_tree_with_entropy(rows_t const& rows) {
+  static decision_node build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
   }
 };

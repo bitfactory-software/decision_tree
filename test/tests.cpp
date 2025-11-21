@@ -73,6 +73,6 @@ TEST_CASE("result_counts") {
 }
 
 TEST_CASE("build_tree") {
-  auto tree = data_set::build_tree_with_entropy(test_data);
+  auto tree = data_set::build_tree(test_data);
   std::cout << data_set::print(tree, "");
 }
