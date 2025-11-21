@@ -33,7 +33,7 @@ jobs:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-            g++: 14
+            g++: 15
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
