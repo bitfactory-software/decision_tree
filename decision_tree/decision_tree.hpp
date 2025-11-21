@@ -179,7 +179,8 @@ struct data {
               .false_path = std::make_shared<decision_node>(
                   build_tree(best_gain.split_sets[1], score_function))}}};
     } else
-      return decision_node{.node_data = *result_counts(rows).begin()};
+      return decision_node{.column_value = {},
+                           .node_data = *result_counts(rows).begin()};
   }
   static decision_node build_tree_with_entropy(rows_t const& rows) {
     return build_tree(rows, &entropy);
