@@ -80,11 +80,11 @@ struct data {
         return os << "{" << result->first << ": " << result->second << "}\n";
       } else {
         auto const& children = std::get<children_t>(p.node.node_data);
-        os << p.node.column_value << "?\n";
-        os << p.indent << "T-> "
-           << print{*children.true_path, p.indent + "   "};
-        os << p.indent << "F-> "
-           << print{*children.false_path, p.indent + "   "};
+        os << p.node.column_value;
+        os << p.indent << "T-> ";
+        os << print{*children.true_path, p.indent + "   "};
+        os << p.indent << "F-> ";
+        os << print{*children.false_path, p.indent + "   "};
         return os;
       }
     }
