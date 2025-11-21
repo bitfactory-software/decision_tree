@@ -20,7 +20,8 @@ Checks: "*,
         -readability-magic-numbers,
         -hicpp-braces-around-statements,
         -readability-braces-around-statements,
-        -cert-err58-cpp
+        -cert-err58-cpp,
+        -readability-identifier-length
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
