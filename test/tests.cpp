@@ -1,9 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <decision_tree/decision_tree.hpp>
 #include <iostream>
-#include <print>
+//#include <print>
 #include <string>
+#include <algorithm>
 
 using namespace Catch::Matchers;
 
@@ -33,8 +35,8 @@ TEST_CASE("split_table_by_column_value") {
   auto split = data_set::split_table_by_column_value<2>(test_data, true);
 
   CHECK(split[0].size() == 8);
-  std::println("split[0] {}", split[0]);
-  data_set::rows_t expected_0 = {{"Slashdot", "USA", true, 18, "None"},
+  //std::println("split[0] {}", split[0]);
+  const data_set::rows_t expected_0 = {{"Slashdot", "USA", true, 18, "None"},
                                  {"Google", "France", true, 23, "Premium"},
                                  {"Digg", "USA", true, 24, "Basic"},
                                  {"Kiwitobes", "France", true, 23, "Basic"},
@@ -46,8 +48,8 @@ TEST_CASE("split_table_by_column_value") {
     CHECK(std::ranges::find(split[0], row) != split[0].end());
 
   CHECK(split[1].size() == 7);
-  std::println("split[1] {}", split[1]);
-  data_set::rows_t expected_1 = {{"Google", "UK", false, 21, "Premium"},
+  //std::println("split[1] {}", split[1]);
+  const data_set::rows_t expected_1 = {{"Google", "UK", false, 21, "Premium"},
                                  {"(direct)", "UK", false, 21, "Basic"},
                                  {"Google", "USA", false, 24, "Premium"},
                                  {"Digg", "USA", false, 18, "None"},

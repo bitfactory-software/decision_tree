@@ -32,7 +32,7 @@ struct to_variant;
 
 template <typename... Ts>
 struct to_variant<std::tuple<Ts...>> {
-  using type = std::variant<typename Ts...>;
+  using type = std::variant<Ts...>;
 };
 }  // namespace detail
 
@@ -151,7 +151,8 @@ struct data {
       for (auto const& row : rows) column_values.insert(std::get<Column>(row));
       for (const auto& value : column_values) {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
-        double p = split_sets[0].size() / static_cast<double>(rows.size());
+        double p = static_cast<double>(split_sets[0].size()) /
+                   static_cast<double>(rows.size());
         auto gain = current_score - p * score_function(split_sets[0]) -
                     (1 - p) * score_function(split_sets[1]);
         if (gain > best_gain.value && !split_sets[0].empty() &&
@@ -166,8 +167,9 @@ struct data {
 
   static decision_node build_tree(rows_t const& rows, auto score_function) {
     if (rows.empty()) return {};
-    if (auto best_gain = gain<0>(rows, gain_t{.value = 0.0},
-                                 score_function(rows), score_function);
+    if (auto best_gain = gain<0>(
+            rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
+            score_function(rows), score_function);
         best_gain.value > 0) {
       return decision_node{
           .column_value = best_gain.criteria,
