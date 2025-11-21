@@ -105,8 +105,8 @@ struct data {
     std::array<rows_set_t, 2> split_sets;
     for (auto const& row : rows)
       split_sets[splits<I>(row, value) ? 0 : 1].insert(row);
-    return {std::ranges::to<std::vector>(split_sets[0]),
-            std::ranges::to<std::vector>(split_sets[1])};
+    return {rows_t(split_sets[0].begin(), split_sets[0].end()),
+            rows_t(split_sets[1].begin(), split_sets[1].end())};
   }
 
   static auto result_counts(rows_t const& rows) {
