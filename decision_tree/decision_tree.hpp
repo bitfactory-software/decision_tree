@@ -64,7 +64,7 @@ struct data {
 
   struct decision_node;
   struct children_t {
-    std::shared_ptr<decision_node> true_path, false_path;
+    std::unique_ptr<decision_node> true_path, false_path;
   };
   using node_data_t = std::variant<children_t, result_t>;
   struct decision_node {
@@ -174,9 +174,9 @@ struct data {
       return decision_node{
           .column_value = best_gain.criteria,
           .node_data = node_data_t{children_t{
-              .true_path = std::make_shared<decision_node>(
+              .true_path = std::make_unique<decision_node>(
                   build_tree(best_gain.split_sets[0], score_function)),
-              .false_path = std::make_shared<decision_node>(
+              .false_path = std::make_unique<decision_node>(
                   build_tree(best_gain.split_sets[1], score_function))}}};
     } else
       return decision_node{.column_value = {},
