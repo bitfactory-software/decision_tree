@@ -37,12 +37,7 @@
             "toolset": {
                 "value": "host=x64",
                 "strategy": "external"
-            },
-          "cacheVariables": {
-            "decision_tree_ENABLE_CPPCHECK": true,
-            "decision_tree_ENABLE_CLANG_TIDY": true,
-            "decision_tree_ENABLE_SAN": true
-          }
+            }
         },
         {
           "name": "conf-unixlike-common",
@@ -75,9 +70,7 @@
             "CMAKE_C_COMPILER": "cl",
             "CMAKE_CXX_COMPILER": "cl",
             "CMAKE_BUILD_TYPE": "Debug",
-            "ENABLE_DEVELOPER_MODE": "ON",
-            "decision_tree_ENABLE_CPPCHECK": false,
-            "decision_tree_ENABLE_CLANG_TIDY": false
+            "ENABLE_DEVELOPER_MODE": "ON"
           }
         },
         {
