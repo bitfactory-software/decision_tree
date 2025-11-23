@@ -1,6 +1,6 @@
 include(GenerateExportHeader)
 
-add_library(decision_tree INTERFACE decision_tree.hpp)
+add_library(decision_tree INTERFACE ./ml/decision_tree.hpp)
 add_library(decision_tree::decision_tree ALIAS decision_tree)
 target_include_directories(decision_tree ${WARNING_GUARD} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
                                                                   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>)

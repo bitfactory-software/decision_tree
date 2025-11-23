@@ -13,7 +13,7 @@
 #include <variant>
 #include <vector>
 
-namespace decision_tree {
+namespace bit_factory::ml {
 
 namespace detail {
 template <typename T, typename... Ts>
@@ -59,7 +59,7 @@ struct remove_last<std::tuple<Args...>> {
 }  // namespace detail
 
 template <typename... Values>
-struct data {
+struct decision_tree {
   // types
   using row_t = std::tuple<Values...>;
   using rows_t = std::vector<row_t>;
