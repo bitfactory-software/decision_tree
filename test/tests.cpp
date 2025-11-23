@@ -73,9 +73,9 @@ TEST_CASE("result_counts") {
   CHECK(counts["basic"] == 6);
   CHECK(counts["Premium"] == 3);
 
-  auto impurity = decision_tree::gini_impurity(test_data);
+  auto impurity = decision_tree::gini_impurity(counts);
   CHECK_THAT(impurity, WithinAbs(0.6328125, 0.00000001));
-  auto e = decision_tree::entropy(test_data);
+  auto e = decision_tree::entropy(counts);
   CHECK_THAT(e, WithinAbs(1.50524081494414785, 0.00000001));
 }
 
@@ -88,4 +88,14 @@ TEST_CASE("build_tree and classify") {
   auto prediction = decision_tree::classify(tree, {"direct", "USA", true, 5});
   std::cout << decision_tree::print_result(prediction) << "\n";
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
+
+  auto tree1 = decision_tree::build_tree(test_data);
+  decision_tree::prune(tree1,0.1);
+  std::cout << decision_tree::print_node(tree1, "") << "\n";
+  decision_tree::prune(tree1,1.0);
+  std::cout << decision_tree::print_node(tree1, "") << "\n";
+
+  auto tree2 = decision_tree::build_tree(test_data);
+  decision_tree::prune(tree1,1.0);
+  std::cout << decision_tree::print_node(tree1, "") << "\n";
 }

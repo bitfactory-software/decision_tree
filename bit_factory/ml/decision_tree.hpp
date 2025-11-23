@@ -147,15 +147,25 @@ struct decision_tree {
             rows_t(split_sets[1].begin(), split_sets[1].end())};
   }
 
-  static auto result_counts(rows_t const& rows) {
-    std::map<predict_t, int> counts;
-    for (auto const& row : rows) ++counts[std::get<predict_column>(row)];
+  static result_counts_t result_counts(auto const& rows, auto get_column) {
+    result_counts_t counts;
+    for (auto const& row : rows) ++counts[get_column(row)];
     return counts;
   }
 
-  static auto gini_impurity(rows_t const& rows) {
-    double total = static_cast<double>(rows.size());
-    auto counts = result_counts(rows);
+  static result_counts_t result_counts(rows_t const& rows) {
+    return result_counts(
+        rows, [](row_t const& row) { return std::get<predict_column>(row); });
+  }
+
+  static double result_counts_total(result_counts_t const& result_counts) {
+    double total = 0.0;
+    for (auto const& result_count : result_counts) total += result_count.second;
+    return total;
+  }
+
+  static double gini_impurity(result_counts_t const& counts) {
+    double total = result_counts_total(counts);
     auto impurity = 0.0;
     for (auto const& [k1, count1] : counts)
       for (auto const& [k2, count2] : counts)
@@ -163,9 +173,8 @@ struct decision_tree {
     return impurity;
   }
 
-  static auto entropy(rows_t const& rows) {
-    double total = static_cast<double>(rows.size());
-    auto counts = result_counts(rows);
+  static double entropy(result_counts_t const& counts) {
+    double total = result_counts_total(counts);
     auto e = 0.0;
     for (auto const& [k, count] : counts) {
       auto p = count / total;
@@ -191,8 +200,9 @@ struct decision_tree {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
         double p = static_cast<double>(split_sets[0].size()) /
                    static_cast<double>(rows.size());
-        auto gain = current_score - p * score_function(split_sets[0]) -
-                    (1 - p) * score_function(split_sets[1]);
+        auto gain = current_score -
+                    p * score_function(result_counts(split_sets[0])) -
+                    (1 - p) * score_function(result_counts(split_sets[1]));
         if (gain > best_gain.value && !split_sets[0].empty() &&
             !split_sets[1].empty())
           best_gain = {gain, {Column, value}, split_sets};
@@ -207,7 +217,7 @@ struct decision_tree {
     if (rows.empty()) return {};
     if (auto best_gain = gain<0>(
             rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
-            score_function(rows), score_function);
+            score_function(result_counts(rows)), score_function);
         best_gain.value > 0) {
       return decision_node{
           .column_value = best_gain.criteria,
@@ -250,17 +260,32 @@ struct decision_tree {
       return classify(*children.false_path, observation);
   }
 
-  // static decision_node prune(decision_node const& tree, double min_gain) {
-  //   if (auto result = std::get_if<result_t>(&tree.node_data))
-  //     return decision_node{tree.column_value, *result};
+  static result_counts_t as_one(result_counts_t l, result_counts_t const& r) {
+    for (auto [value, count] : r) l[value] += count;
+    return l;
+  }
 
-  //  if (auto* children = std::get_if<children_t>(&tree.node_data)) {
-  //    children->true_branch = std::make_unique<decision_node>(
-  //        prune(*children->true_branch, min_gain));
-  //    children->false_branch = std::make_unique<decision_node>(
-  //        prune(*children->false_branch, min_gain));
-  //  }
-  //}
+  static void prune(decision_node& tree, double min_gain, auto score_function) {
+    if (auto* children = std::get_if<children_t>(&tree.node_data)) {
+      prune(*children->true_path, min_gain, score_function);
+      prune(*children->false_path, min_gain, score_function);
+    }
+
+    if (auto* children = std::get_if<children_t>(&tree.node_data))
+      if (auto true_result =
+              std::get_if<result_counts_t>(&children->true_path->node_data))
+        if (auto false_result =
+                std::get_if<result_counts_t>(&children->false_path->node_data))
+          if (auto pruned = as_one(*true_result, *false_result);
+              (score_function(pruned) - (score_function(*true_result) +
+                                         score_function(*false_result) / 2.0)) <
+              min_gain)
+            tree.node_data = pruned;
+  }
+
+  static void prune(decision_node& tree, double min_gain) {
+    prune(tree, min_gain, &entropy);
+  }
 };
 
-}  // namespace decision_tree
+}  // namespace bit_factory::ml
