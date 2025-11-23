@@ -61,7 +61,7 @@ add_library(decision_tree::decision_tree_warnings ALIAS decision_tree_warnings)
 add_subdirectory(configured_files)
 
 # Adding the decision_tree:
-add_subdirectory(decision_tree)
+add_subdirectory(bit_factory)
 
 # Don't even look at tests if we're not top level
 if(NOT decision_tree_is_top)

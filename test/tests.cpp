@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <decision_tree/decision_tree.hpp>
+#include <bit_factory/decision_tree.hpp>
 #include <iostream>
 // #include <print>
 #include <algorithm>
