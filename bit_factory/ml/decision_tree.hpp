@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <tuple>
@@ -67,10 +68,10 @@ struct decision_tree {
   inline static constexpr std::size_t column_count = std::tuple_size_v<row_t>;
   inline static constexpr std::size_t predict_column = column_count - 1;
   using predict_t = std::tuple_element_t<predict_column, row_t>;
-  using result_counts_t = std::map<predict_t, int>;
+  using result_counts_t = std::map<predict_t, double>;
   using split_sets_t = std::array<rows_t, 2>;
   using observation_t =
-      typename detail::remove_last<std::tuple<Values...>>::type;
+      typename detail::remove_last<std::tuple<std::optional<Values>...>>::type;
   using result_t = typename result_counts_t::value_type;
   using unique_tuple_t = typename detail::unique<std::tuple<>, Values...>::type;
   using values_variant_t = typename detail::to_variant<unique_tuple_t>::type;
@@ -241,9 +242,9 @@ struct decision_tree {
       if (column_value.column > I)
         return take_true_branch<I + 1>(column_value, observation);
 
-      return splits<I>(
-          observation,
-          std::get<std::tuple_element_t<I, observation_t>>(column_value.value));
+      using optional_column_t = std::tuple_element_t<I, observation_t>;
+      using column_t = typename optional_column_t::value_type;
+      return splits<I>(observation, std::get<column_t>(column_value.value));
     } else {
       return false;  // should never be reached
     }
@@ -258,6 +259,58 @@ struct decision_tree {
       return classify(*children.true_path, observation);
     else
       return classify(*children.false_path, observation);
+  }
+
+  static double sum(result_counts_t const& result_counts) {
+    auto total = 0.0;
+    for (auto const& [result, count] : result_counts) total += count;
+    return total;
+  }
+
+  static void add_weighted(result_counts_t& to, const result_counts_t& from,
+                           double weight) {
+    for (auto const& [result, count] : from) to[result] += count * weight;
+  }
+
+  static result_counts_t combine_children_of_missing_data_node(
+      children_t const& children, observation_t const& observation) {
+    auto result_true =
+        classify_with_missing_data(*children.true_path, observation);
+    auto result_false =
+        classify_with_missing_data(*children.false_path, observation);
+    auto sum_true = sum(result_true);
+    auto sum_false = sum(result_false);
+    auto sum = sum_true + sum_false;
+    result_counts_t combined_result_counts;
+    add_weighted(combined_result_counts, result_true, sum_true / sum);
+    add_weighted(combined_result_counts, result_false, sum_false / sum);
+    return combined_result_counts;
+  }
+
+  template <std::size_t I>
+  static result_counts_t classify_column_with_missing_data(
+      decision_node const& tree, observation_t const& observation) {
+    if constexpr (I < std::tuple_size_v<observation_t>) {
+      if (I < tree.column_value.column)
+        return classify_column_with_missing_data<I + 1>(tree, observation);
+
+      auto const& children = std::get<children_t>(tree.node_data);
+      if (!std::get<I>(observation))
+        return combine_children_of_missing_data_node(children, observation);
+      else if (take_true_branch<I>(tree.column_value, observation))
+        return classify_with_missing_data(*children.true_path, observation);
+      else
+        return classify_with_missing_data(*children.false_path, observation);
+    } else {
+      return {};  // never reached
+    }
+  }
+
+  static result_counts_t classify_with_missing_data(
+      decision_node const& tree, observation_t const& observation) {
+    if (auto result = std::get_if<result_counts_t>(&tree.node_data))
+      return *result;
+    return classify_column_with_missing_data<0>(tree, observation);
   }
 
   static result_counts_t as_one(result_counts_t l, result_counts_t const& r) {

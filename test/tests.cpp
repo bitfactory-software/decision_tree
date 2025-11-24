@@ -1,7 +1,7 @@
+#include <bit_factory/ml/decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <bit_factory/ml/decision_tree.hpp>
 #include <iostream>
 // #include <print>
 #include <algorithm>
@@ -13,24 +13,25 @@ using namespace Catch::Matchers;
 
 namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
-using decision_tree =
-    bit_factory::ml::decision_tree<std::string, std::string, bool, int, std::string>;
-const decision_tree::rows_t test_data{{"Slashdot", "France", true, 19, "None"},
-                                 {"Slashdot", "UK", false, 21, "None"},
-                                 {"Slashdot", "USA", true, 18, "None"},
-                                 {"Kiwitobes", "France", true, 19, "basic"},
-                                 {"Kiwitobes", "France", true, 23, "basic"},
-                                 {"Kiwitobes", "UK", false, 19, "None"},
-                                 {"Google", "France", true, 23, "Premium"},
-                                 {"Google", "UK", false, 21, "Premium"},
-                                 {"Google", "USA", false, 24, "Premium"},
-                                 {"Google", "UK", false, 18, "None"},
-                                 {"Google", "UK", true, 18, "basic"},
-                                 {"Digg", "New Zealand", true, 12, "basic"},
-                                 {"Digg", "USA", false, 18, "None"},
-                                 {"Digg", "USA", true, 24, "basic"},
-                                 {"(direct)", "New Zealand", false, 12, "None"},
-                                 {"(direct)", "UK", false, 21, "basic"}};
+using decision_tree = bit_factory::ml::decision_tree<std::string, std::string,
+                                                     bool, int, std::string>;
+const decision_tree::rows_t test_data{
+    {"Slashdot", "France", true, 19, "None"},
+    {"Slashdot", "UK", false, 21, "None"},
+    {"Slashdot", "USA", true, 18, "None"},
+    {"Kiwitobes", "France", true, 19, "basic"},
+    {"Kiwitobes", "France", true, 23, "basic"},
+    {"Kiwitobes", "UK", false, 19, "None"},
+    {"Google", "France", true, 23, "Premium"},
+    {"Google", "UK", false, 21, "Premium"},
+    {"Google", "USA", false, 24, "Premium"},
+    {"Google", "UK", false, 18, "None"},
+    {"Google", "UK", true, 18, "basic"},
+    {"Digg", "New Zealand", true, 12, "basic"},
+    {"Digg", "USA", false, 18, "None"},
+    {"Digg", "USA", true, 24, "basic"},
+    {"(direct)", "New Zealand", false, 12, "None"},
+    {"(direct)", "UK", false, 21, "basic"}};
 
 }  // namespace
 
@@ -79,23 +80,39 @@ TEST_CASE("result_counts") {
   CHECK_THAT(e, WithinAbs(1.50524081494414785, 0.00000001));
 }
 
-TEST_CASE("build_tree and classify") {
+TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
+  using namespace std::string_literals;
+
   auto tree = decision_tree::build_tree(test_data);
   std::cout << decision_tree::print_node(tree, "") << "\n";
 
-  static_assert(std::same_as<decision_tree::observation_t,
-                             std::tuple<std::string, std::string, bool, int>>);
-  auto prediction = decision_tree::classify(tree, {"direct", "USA", true, 5});
+  static_assert(
+      std::same_as<
+          decision_tree::observation_t,
+          std::tuple<std::optional<std::string>, std::optional<std::string>,
+                     std::optional<bool>, std::optional<int>>>);
+  auto prediction =
+      decision_tree::classify(tree, {"(direct)", "USA"s, true, 5});
   std::cout << decision_tree::print_result(prediction) << "\n";
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
 
   auto tree1 = decision_tree::build_tree(test_data);
-  decision_tree::prune(tree1,0.1);
+  decision_tree::prune(tree1, 0.1);
   std::cout << decision_tree::print_node(tree1, "") << "\n";
-  decision_tree::prune(tree1,1.0);
+  decision_tree::prune(tree1, 1.0);
   std::cout << decision_tree::print_node(tree1, "") << "\n";
 
   auto tree2 = decision_tree::build_tree(test_data);
-  decision_tree::prune(tree1,1.0);
-  std::cout << decision_tree::print_node(tree1, "") << "\n";
+  //decision_tree::prune(tree1, 1.0);
+  std::cout << decision_tree::print_node(tree2, "") << "\n";
+
+  auto prediction_with_missing1 = decision_tree::classify_with_missing_data(
+      tree2, {"Google", {}, true, {}});
+  std::cout << decision_tree::print_result(prediction_with_missing1) << "\n";
+  auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
+      tree2, {"Google", "France", {}, {}});
+  std::cout << decision_tree::print_result(prediction_with_missing2) << "\n";
+  auto prediction_with_missing3 = decision_tree::classify_with_missing_data(
+      tree2, {"Google", {}, {}, {}});
+  std::cout << decision_tree::print_result(prediction_with_missing3) << "\n";
 }
