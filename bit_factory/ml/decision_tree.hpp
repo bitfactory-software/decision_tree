@@ -69,7 +69,8 @@ struct decision_tree {
   inline static constexpr std::size_t predict_column = column_count - 1;
   using predict_t = std::tuple_element_t<predict_column, row_t>;
   using result_counts_t = std::map<predict_t, double>;
-  using split_sets_t = std::array<rows_t, 2>;
+  using pointer_to_rows_t = std::vector<row_t const*>;
+  using split_sets_t = std::array<pointer_to_rows_t, 2>;
   using observation_t =
       typename detail::remove_last<std::tuple<std::optional<Values>...>>::type;
   using result_t = typename result_counts_t::value_type;
@@ -129,6 +130,12 @@ struct decision_tree {
     }
   };
 
+  static pointer_to_rows_t get_pointer_to_rows(rows_t const& rows) {
+    pointer_to_rows_t pointer_to_rows;
+    for (auto const& row : rows) pointer_to_rows.push_back(&row);
+    return pointer_to_rows;
+  }
+
   template <std::size_t I, typename V>
   static constexpr bool splits(auto const& row, V const& value) {
     if constexpr (std::is_arithmetic_v<V>) {
@@ -139,13 +146,12 @@ struct decision_tree {
   }
 
   template <std::size_t I, typename V>
-  static split_sets_t split_table_by_column_value(rows_t const& rows,
+  static split_sets_t split_table_by_column_value(pointer_to_rows_t const& rows,
                                                   V const& value) {
-    std::array<rows_set_t, 2> split_sets;
-    for (auto const& row : rows)
-      split_sets[splits<I>(row, value) ? 0 : 1].insert(row);
-    return {rows_t(split_sets[0].begin(), split_sets[0].end()),
-            rows_t(split_sets[1].begin(), split_sets[1].end())};
+    split_sets_t split_sets;
+    for (row_t const* row : rows)
+      split_sets[splits<I>(*row, value) ? 0 : 1].push_back(row);
+    return split_sets;
   }
 
   static result_counts_t result_counts(auto const& rows, auto get_column) {
@@ -154,9 +160,9 @@ struct decision_tree {
     return counts;
   }
 
-  static result_counts_t result_counts(rows_t const& rows) {
+  static result_counts_t result_counts(pointer_to_rows_t const& rows) {
     return result_counts(
-        rows, [](row_t const& row) { return std::get<predict_column>(row); });
+        rows, [](row_t const* row) { return std::get<predict_column>(*row); });
   }
 
   static double result_counts_total(result_counts_t const& result_counts) {
@@ -191,12 +197,12 @@ struct decision_tree {
   };
 
   template <std::size_t Column>
-  static gain_t gain(rows_t const& rows, gain_t best_gain, double current_score,
-                     auto score_function) {
+  static gain_t find_best_gain(pointer_to_rows_t const& rows, gain_t best_gain,
+                               double current_score, auto score_function) {
     if constexpr (Column < predict_column) {
       using column_t = std::tuple_element_t<Column, row_t>;
       std::set<column_t> column_values;
-      for (auto const& row : rows) column_values.insert(std::get<Column>(row));
+      for (auto const& row : rows) column_values.insert(std::get<Column>(*row));
       for (const auto& value : column_values) {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
         double p = static_cast<double>(split_sets[0].size()) /
@@ -208,15 +214,17 @@ struct decision_tree {
             !split_sets[1].empty())
           best_gain = {gain, {Column, value}, split_sets};
       }
-      return gain<Column + 1>(rows, best_gain, current_score, score_function);
+      return find_best_gain<Column + 1>(rows, best_gain, current_score,
+                                        score_function);
     } else {
       return best_gain;
     }
   }
 
-  static decision_node build_tree(rows_t const& rows, auto score_function) {
+  static decision_node build_tree(pointer_to_rows_t const& rows,
+                                  auto score_function) {
     if (rows.empty()) return {};
-    if (auto best_gain = gain<0>(
+    if (auto best_gain = find_best_gain<0>(
             rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
             score_function(result_counts(rows)), score_function);
         best_gain.value > 0) {
@@ -231,6 +239,10 @@ struct decision_tree {
       return decision_node{.column_value = {},
                            .node_data = result_counts(rows)};
   }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+
+  static decision_node build_tree(rows_t const& rows, auto score_function) {
+    return build_tree(get_pointer_to_rows(rows), score_function);
+  }
   static decision_node build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
   }

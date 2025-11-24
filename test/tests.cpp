@@ -36,8 +36,10 @@ const decision_tree::rows_t test_data{
 
 }  // namespace
 
+static const auto pointer_to_test_data_rows = decision_tree::get_pointer_to_rows(test_data);
+
 TEST_CASE("split_table_by_column_value") {
-  auto split = decision_tree::split_table_by_column_value<2>(test_data, true);
+  auto split = decision_tree::split_table_by_column_value<2>(pointer_to_test_data_rows, true);
 
   CHECK(split[0].size() == 8);
   // std::println("split[0] {}", split[0]);
@@ -50,8 +52,11 @@ TEST_CASE("split_table_by_column_value") {
       {"Google", "UK", true, 18, "basic"},
       {"Digg", "New Zealand", true, 12, "basic"},
       {"Digg", "USA", true, 24, "basic"}};
-  for (auto const& row : expected_0)
-    CHECK(std::ranges::find(split[0], row) != split[0].end());
+  for (auto const& expected : expected_0)
+    CHECK(std::ranges::find_if(split[0],
+                               [&](decision_tree::row_t const* splitted) {
+                                 return *splitted == expected;
+                               }) != split[0].end());
 
   CHECK(split[1].size() == 8);
   // std::println("split[1] {}", split[1]);
@@ -64,12 +69,15 @@ TEST_CASE("split_table_by_column_value") {
       {"Digg", "USA", false, 18, "None"},
       {"(direct)", "New Zealand", false, 12, "None"},
       {"(direct)", "UK", false, 21, "basic"}};
-  for (auto const& row : expected_1)
-    CHECK(std::ranges::find(split[1], row) != split[1].end());
+  for (auto const& expected : expected_1)
+    CHECK(std::ranges::find_if(split[1],
+                               [&](decision_tree::row_t const* splitted) {
+                                 return *splitted == expected;
+                               }) != split[1].end());
 }
 
 TEST_CASE("result_counts") {
-  auto counts = decision_tree::result_counts(test_data);
+  auto counts = decision_tree::result_counts(pointer_to_test_data_rows);
   CHECK(counts.size() == 3);
   CHECK(counts["None"] == 7);
   CHECK(counts["basic"] == 6);
