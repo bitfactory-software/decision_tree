@@ -6,6 +6,7 @@
 // #include <print>
 #include <algorithm>
 #include <concepts>
+#include <optional>
 #include <string>
 #include <tuple>
 
@@ -103,7 +104,7 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
   std::cout << decision_tree::print_node(tree1, "") << "\n";
 
   auto tree2 = decision_tree::build_tree(test_data);
-  //decision_tree::prune(tree1, 1.0);
+  // decision_tree::prune(tree1, 1.0);
   std::cout << decision_tree::print_node(tree2, "") << "\n";
 
   auto prediction_with_missing1 = decision_tree::classify_with_missing_data(
@@ -112,7 +113,7 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
   auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
       tree2, {"Google", "France", {}, {}});
   std::cout << decision_tree::print_result(prediction_with_missing2) << "\n";
-  auto prediction_with_missing3 = decision_tree::classify_with_missing_data(
-      tree2, {"Google", {}, {}, {}});
+  auto prediction_with_missing3 =
+      decision_tree::classify_with_missing_data(tree2, {"Google", {}, {}, {}});
   std::cout << decision_tree::print_result(prediction_with_missing3) << "\n";
 }
