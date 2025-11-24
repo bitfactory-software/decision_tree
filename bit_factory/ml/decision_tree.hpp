@@ -330,10 +330,22 @@ struct decision_tree {
     return l;
   }
 
-  static void prune(decision_node& tree, double min_gain, auto score_function) {
+  static double score_unpruned(const result_counts_t& true_result,
+                               const result_counts_t& false_result,
+                               auto score) {
+    return (score(true_result) + score(false_result)) / 2.0;
+  }
+
+  static double gain(const result_counts_t& pruned,
+                     const result_counts_t& true_result,
+                     const result_counts_t& false_result, auto score) {
+    return score(pruned) - score_unpruned(true_result, false_result, score);
+  }
+
+  static void prune(decision_node& tree, double min_gain, auto score) {
     if (auto* children = std::get_if<children_t>(&tree.node_data)) {
-      prune(*children->true_path, min_gain, score_function);
-      prune(*children->false_path, min_gain, score_function);
+      prune(*children->true_path, min_gain, score);
+      prune(*children->false_path, min_gain, score);
     }
 
     if (auto* children = std::get_if<children_t>(&tree.node_data))
@@ -342,9 +354,7 @@ struct decision_tree {
         if (auto false_result =
                 std::get_if<result_counts_t>(&children->false_path->node_data))
           if (auto pruned = as_one(*true_result, *false_result);
-              (score_function(pruned) - (score_function(*true_result) +
-                                         score_function(*false_result) / 2.0)) <
-              min_gain)
+              gain(pruned, *true_result, *false_result, score) < min_gain)
             tree.node_data = pruned;
   }
 

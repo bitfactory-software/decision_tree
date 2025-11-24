@@ -36,10 +36,12 @@ const decision_tree::rows_t test_data{
 
 }  // namespace
 
-static const auto pointer_to_test_data_rows = decision_tree::get_pointer_to_rows(test_data);
+static const auto pointer_to_test_data_rows =
+    decision_tree::get_pointer_to_rows(test_data);
 
 TEST_CASE("split_table_by_column_value") {
-  auto split = decision_tree::split_table_by_column_value<2>(pointer_to_test_data_rows, true);
+  auto split = decision_tree::split_table_by_column_value<2>(
+      pointer_to_test_data_rows, true);
 
   CHECK(split[0].size() == 8);
   // std::println("split[0] {}", split[0]);
@@ -93,35 +95,58 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
   using namespace std::string_literals;
 
   auto tree = decision_tree::build_tree(test_data);
-  std::cout << decision_tree::print_node(tree, "") << "\n";
+  std::cout << "build_tree:\n" << decision_tree::print_node(tree, "") << "\n\n";
 
   static_assert(
       std::same_as<
           decision_tree::observation_t,
           std::tuple<std::optional<std::string>, std::optional<std::string>,
                      std::optional<bool>, std::optional<int>>>);
-  auto prediction =
-      decision_tree::classify(tree, {"(direct)", "USA"s, true, 5});
-  std::cout << decision_tree::print_result(prediction) << "\n";
+  auto prediction = decision_tree::classify(tree, {"(direct)", "USA", true, 5});
+  std::cout << R"-(classify(tree, {"(direct)", "USA", true, 5}): )-"
+            << decision_tree::print_result(prediction) << "\n\n";
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
 
-  auto tree1 = decision_tree::build_tree(test_data);
-  decision_tree::prune(tree1, 0.1);
-  std::cout << decision_tree::print_node(tree1, "") << "\n";
-  decision_tree::prune(tree1, 1.0);
-  std::cout << decision_tree::print_node(tree1, "") << "\n";
+  auto tree_prune_0_1 = decision_tree::build_tree(test_data);
+  decision_tree::prune(tree_prune_0_1, 0.1);
+  std::cout << "tree_prune_0_1\n"
+            << decision_tree::print_node(tree_prune_0_1, "") << "\n\n";
+  auto tree_prune_1_0 = decision_tree::build_tree(test_data);
+  decision_tree::prune(tree_prune_1_0, 1.0);
+  std::cout << "tree_prune_1_0\n"
+            << decision_tree::print_node(tree_prune_1_0, "") << "\n\n";
 
-  auto tree2 = decision_tree::build_tree(test_data);
-  // decision_tree::prune(tree1, 1.0);
-  std::cout << decision_tree::print_node(tree2, "") << "\n";
+  {
+      auto prediction_with_missing1 =
+          decision_tree::classify_with_missing_data(tree, {"Google", {}, true, {}});
+      std::cout
+          << R"-(classify_with_missing_data(tree, {"Google", {}, true, {}}): )-"
+          << decision_tree::print_result(prediction_with_missing1) << "\n\n";
+      auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
+          tree, {"Google", "France", {}, {}});
+      std::cout
+          << R"-(classify_with_missing_data(tree, {"Google", "France", {}, {}}): )-"
+          << decision_tree::print_result(prediction_with_missing2) << "\n\n";
+      auto prediction_with_missing3 =
+          decision_tree::classify_with_missing_data(tree, {"Google", {}, {}, {}});
+      std::cout << R"-(classify_with_missing_data(tree, {"Google", {}, {}, {}}): )-"
+                << decision_tree::print_result(prediction_with_missing3) << "\n\n";
+  }
 
-  auto prediction_with_missing1 = decision_tree::classify_with_missing_data(
-      tree2, {"Google", {}, true, {}});
-  std::cout << decision_tree::print_result(prediction_with_missing1) << "\n";
-  auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
-      tree2, {"Google", "France", {}, {}});
-  std::cout << decision_tree::print_result(prediction_with_missing2) << "\n";
-  auto prediction_with_missing3 =
-      decision_tree::classify_with_missing_data(tree2, {"Google", {}, {}, {}});
-  std::cout << decision_tree::print_result(prediction_with_missing3) << "\n";
+  {
+      auto prediction_with_missing1 =
+          decision_tree::classify_with_missing_data(tree_prune_1_0, {"Google", {}, true, {}});
+      std::cout
+          << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", {}, true, {}}): )-"
+          << decision_tree::print_result(prediction_with_missing1) << "\n\n";
+      auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
+          tree_prune_1_0, {"Google", "France", {}, {}});
+      std::cout
+          << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", "France", {}, {}}): )-"
+          << decision_tree::print_result(prediction_with_missing2) << "\n\n";
+      auto prediction_with_missing3 =
+          decision_tree::classify_with_missing_data(tree_prune_1_0, {"Google", {}, {}, {}});
+      std::cout << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", {}, {}, {}}): )-"
+                << decision_tree::print_result(prediction_with_missing3) << "\n\n";
+  }
 }
