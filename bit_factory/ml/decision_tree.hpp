@@ -91,7 +91,8 @@ struct decision_tree {
     }
   };
 
-  static [[nodiscard]] std::string to_string(result_counts_t const& result_counts) {
+  static [[nodiscard]] std::string to_string(
+      result_counts_t const& result_counts) {
     std::stringstream s;
     s << print_result{result_counts};
     return s.str();
