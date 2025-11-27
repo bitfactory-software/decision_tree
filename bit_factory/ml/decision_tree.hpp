@@ -8,12 +8,12 @@
 #include <optional>
 #include <ranges>
 #include <set>
+#include <strstream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <strstream>
 
 namespace bit_factory::ml {
 
@@ -92,7 +92,7 @@ struct decision_tree {
     }
   };
 
-  static [[nodiscard]] std::string to_string(
+  [[nodiscard]] static std::string to_string(
       result_counts_t const& result_counts) {
     std::stringstream s;
     s << print_result{result_counts};
@@ -138,13 +138,13 @@ struct decision_tree {
     }
   };
 
-  friend [[nodiscard]] std::string to_string(tree_t const& tree) {
+  [[nodiscard]] friend std::string to_string(tree_t const& tree) {
     std::stringstream s;
     s << decision_tree::print_node{tree};
     return s.str();
   }
 
-  static [[nodiscard]] pointer_to_rows_t get_pointer_to_rows(
+  [[nodiscard]] static pointer_to_rows_t get_pointer_to_rows(
       rows_t const& rows) {
     pointer_to_rows_t pointer_to_rows;
     for (auto const& row : rows) pointer_to_rows.push_back(&row);
@@ -161,7 +161,7 @@ struct decision_tree {
   }
 
   template <std::size_t I, typename V>
-  static [[nodiscard]] split_sets_t split_table_by_column_value(
+  [[nodiscard]] static split_sets_t split_table_by_column_value(
       pointer_to_rows_t const& rows, V const& value) {
     split_sets_t split_sets;
     for (row_t const* row : rows)
@@ -169,27 +169,27 @@ struct decision_tree {
     return split_sets;
   }
 
-  static [[nodiscard]] result_counts_t result_counts(auto const& rows,
+  [[nodiscard]] static result_counts_t result_counts(auto const& rows,
                                                      auto get_column) {
     result_counts_t counts;
     for (auto const& row : rows) ++counts[get_column(row)];
     return counts;
   }
 
-  static [[nodiscard]] result_counts_t result_counts(
+  [[nodiscard]] static result_counts_t result_counts(
       pointer_to_rows_t const& rows) {
     return result_counts(
         rows, [](row_t const* row) { return std::get<predict_column>(*row); });
   }
 
-  static [[nodiscard]] double result_counts_total(
+  [[nodiscard]] static double result_counts_total(
       result_counts_t const& result_counts) {
     double total = 0.0;
     for (auto const& result_count : result_counts) total += result_count.second;
     return total;
   }
 
-  static [[nodiscard]] double gini_impurity(result_counts_t const& counts) {
+  [[nodiscard]] static double gini_impurity(result_counts_t const& counts) {
     double total = result_counts_total(counts);
     auto impurity = 0.0;
     for (auto const& [k1, count1] : counts)
@@ -198,7 +198,7 @@ struct decision_tree {
     return impurity;
   }
 
-  static [[nodiscard]] double entropy(result_counts_t const& counts) {
+  [[nodiscard]] static double entropy(result_counts_t const& counts) {
     double total = result_counts_total(counts);
     auto e = 0.0;
     for (auto const& [k, count] : counts) {
@@ -239,7 +239,7 @@ struct decision_tree {
     }
   }
 
-  static [[nodiscard]] tree_t build_tree(pointer_to_rows_t const& rows,
+  [[nodiscard]] static tree_t build_tree(pointer_to_rows_t const& rows,
                                          auto score_function) {
     if (rows.empty()) return {};
     if (auto best_gain = find_best_gain<0>(
@@ -256,16 +256,16 @@ struct decision_tree {
       return tree_t{.column_value = {}, .node_data = result_counts(rows)};
   }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-  static [[nodiscard]] tree_t build_tree(rows_t const& rows,
+  [[nodiscard]] static tree_t build_tree(rows_t const& rows,
                                          auto score_function) {
     return build_tree(get_pointer_to_rows(rows), score_function);
   }
-  static [[nodiscard]] tree_t build_tree(rows_t const& rows) {
+  [[nodiscard]] static tree_t build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
   }
 
   template <std::size_t I>
-  static [[nodiscard]] bool take_true_branch(column_value_t column_value,
+  [[nodiscard]] static bool take_true_branch(column_value_t column_value,
                                              observation_t const& observation) {
     if constexpr (I < std::tuple_size_v<observation_t>) {
       if (column_value.column > I)
@@ -279,7 +279,7 @@ struct decision_tree {
     }
   }
 
-  static [[nodiscard]] result_counts_t classify(
+  [[nodiscard]] static result_counts_t classify(
       tree_t const& tree, observation_t const& observation) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
@@ -290,7 +290,7 @@ struct decision_tree {
       return classify(*children.false_path, observation);
   }
 
-  static [[nodiscard]] double sum(result_counts_t const& result_counts) {
+  [[nodiscard]] static double sum(result_counts_t const& result_counts) {
     auto total = 0.0;
     for (auto const& [result, count] : result_counts) total += count;
     return total;
@@ -301,7 +301,7 @@ struct decision_tree {
     for (auto const& [result, count] : from) to[result] += count * weight;
   }
 
-  static [[nodiscard]] result_counts_t combine_children_of_missing_data_node(
+  [[nodiscard]] static result_counts_t combine_children_of_missing_data_node(
       children_t const& children, observation_t const& observation) {
     auto result_true =
         classify_with_missing_data(*children.true_path, observation);
@@ -317,7 +317,7 @@ struct decision_tree {
   }
 
   template <std::size_t I>
-  static [[nodiscard]] result_counts_t classify_column_with_missing_data(
+  [[nodiscard]] static result_counts_t classify_column_with_missing_data(
       tree_t const& tree, observation_t const& observation) {
     if constexpr (I < std::tuple_size_v<observation_t>) {
       if (I < tree.column_value.column)
@@ -335,33 +335,33 @@ struct decision_tree {
     }
   }
 
-  static [[nodiscard]] result_counts_t classify_with_missing_data(
+  [[nodiscard]] static result_counts_t classify_with_missing_data(
       tree_t const& tree, observation_t const& observation) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
     return classify_column_with_missing_data<0>(tree, observation);
   }
 
-  static [[nodiscard]] result_counts_t as_one(result_counts_t l,
+  [[nodiscard]] static result_counts_t as_one(result_counts_t l,
                                               result_counts_t const& r) {
     for (auto [value, count] : r) l[value] += count;
     return l;
   }
 
-  static [[nodiscard]] double score_unpruned(
+  [[nodiscard]] static double score_unpruned(
       const result_counts_t& true_result, const result_counts_t& false_result,
       auto score) {
     return (score(true_result) + score(false_result)) / 2.0;
   }
 
-  static [[nodiscard]] double gain(const result_counts_t& pruned,
+  [[nodiscard]] static double gain(const result_counts_t& pruned,
                                    const result_counts_t& true_result,
                                    const result_counts_t& false_result,
                                    auto score) {
     return score(pruned) - score_unpruned(true_result, false_result, score);
   }
 
-  static [[nodiscard]] children_t prune_children(tree_t const& tree,
+  [[nodiscard]] static children_t prune_children(tree_t const& tree,
                                                  double min_gain, auto score) {
     auto const& original_children = std::get<children_t>(tree.node_data);
     return {.true_path = std::make_unique<tree_t>(
@@ -370,7 +370,7 @@ struct decision_tree {
                 prune(*original_children.false_path, min_gain, score))};
   }
 
-  static [[nodiscard]] tree_t prune(tree_t const& tree, double min_gain,
+  [[nodiscard]] static tree_t prune(tree_t const& tree, double min_gain,
                                     auto score) {
     tree_t pruned{.column_value = tree.column_value};
 
@@ -391,7 +391,7 @@ struct decision_tree {
     return pruned;
   }
 
-  static [[nodiscard]] tree_t prune(tree_t const& tree, double min_gain) {
+  [[nodiscard]] static tree_t prune(tree_t const& tree, double min_gain) {
     return prune(tree, min_gain, &entropy);
   }
 };
