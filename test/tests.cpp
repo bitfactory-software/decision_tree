@@ -120,8 +120,7 @@ F-> 0:Slashdot?
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
   CHECK(decision_tree::to_string(prediction) == "{basic: 4}");
 
-  auto tree_prune_0_1 = decision_tree::build_tree(test_data);
-  decision_tree::prune(tree_prune_0_1, 0.1);
+  auto tree_prune_0_1 = decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
   CHECK(to_string(tree_prune_0_1) ==
         R"(0:Google?
 T-> 3:21?
@@ -137,8 +136,7 @@ F-> 0:Slashdot?
          T-> {basic: 1}
          F-> {None: 3}
 )");
-  auto tree_prune_1_0 = decision_tree::build_tree(test_data);
-  decision_tree::prune(tree_prune_1_0, 1.0);
+  auto tree_prune_1_0 = decision_tree::prune(tree_prune_0_1, 1.0);
   CHECK(to_string(tree_prune_1_0) ==
         R"(0:Google?
 T-> 3:21?
