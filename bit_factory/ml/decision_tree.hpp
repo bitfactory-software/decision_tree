@@ -13,6 +13,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <strstream>
 
 namespace bit_factory::ml {
 
