@@ -8,6 +8,7 @@
 #include <optional>
 #include <ranges>
 #include <set>
+#include <string>
 #include <strstream>
 #include <tuple>
 #include <type_traits>
