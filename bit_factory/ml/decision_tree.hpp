@@ -153,7 +153,7 @@ struct decision_tree {
   }
 
   template <std::size_t I, typename V>
-  static constexpr bool [[nodiscard]] splits(auto const& row, V const& value) {
+  [[nodiscard]] static constexpr bool splits(auto const& row, V const& value) {
     if constexpr (std::is_arithmetic_v<V>) {
       return std::get<I>(row) >= value;
     } else {
