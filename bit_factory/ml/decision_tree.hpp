@@ -8,8 +8,8 @@
 #include <optional>
 #include <ranges>
 #include <set>
+#include <sstream>
 #include <string>
-#include <strstream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -141,7 +141,7 @@ struct decision_tree {
 
   [[nodiscard]] friend std::string to_string(tree_t const& tree) {
     std::stringstream s;
-    s << decision_tree::print_node{tree};
+    s << decision_tree::print_node{tree, ""};
     return s.str();
   }
 
@@ -373,14 +373,14 @@ struct decision_tree {
 
   [[nodiscard]] static tree_t prune(tree_t const& tree, double min_gain,
                                     auto score) {
-    tree_t pruned{.column_value = tree.column_value};
+    if (auto* result_counts = std::get_if<result_counts_t>(&tree.node_data))
+      return tree_t{.column_value = tree.column_value,
+                    .node_data = std::get<result_counts_t>(tree.node_data)};
 
-    if (auto* result_counts = std::get_if<result_counts_t>(&tree.node_data)) {
-      pruned.node_data = std::get<result_counts_t>(tree.node_data);
-      return pruned;
-    }
-
-    pruned.node_data = prune_children(tree, min_gain, score);
+    tree_t pruned {
+      .column_value = tree.column_value,
+      .node_data = prune_children(tree, min_gain, score)
+    };
     auto& pruned_children = std::get<children_t>(pruned.node_data);
     if (auto true_result =
             std::get_if<result_counts_t>(&pruned_children.true_path->node_data))
