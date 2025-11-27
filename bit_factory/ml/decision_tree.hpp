@@ -102,18 +102,18 @@ struct decision_tree {
     }
   };
 
-  struct decision_node_t;
+  struct tree_t;
   struct children_t {
-    std::unique_ptr<decision_node_t> true_path, false_path;
+    std::unique_ptr<tree_t> true_path, false_path;
   };
   using node_data_t = std::variant<children_t, result_counts_t>;
-  struct decision_node_t {
+  struct tree_t {
     column_value_t column_value;
     node_data_t node_data;
   };
 
   struct print_node {
-    decision_node_t const& node;
+    tree_t const& node;
     std::string indent;
     friend std::ostream& operator<<(std::ostream& os, print_node const& p) {
       if (auto result = std::get_if<result_counts_t>(&p.node.node_data)) {
@@ -221,29 +221,29 @@ struct decision_tree {
     }
   }
 
-  static decision_node_t build_tree(pointer_to_rows_t const& rows,
+  static tree_t build_tree(pointer_to_rows_t const& rows,
                                   auto score_function) {
     if (rows.empty()) return {};
     if (auto best_gain = find_best_gain<0>(
             rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
             score_function(result_counts(rows)), score_function);
         best_gain.value > 0) {
-      return decision_node_t{
+      return tree_t{
           .column_value = best_gain.criteria,
           .node_data = node_data_t{children_t{
-              .true_path = std::make_unique<decision_node_t>(
+              .true_path = std::make_unique<tree_t>(
                   build_tree(best_gain.split_sets[0], score_function)),
-              .false_path = std::make_unique<decision_node_t>(
+              .false_path = std::make_unique<tree_t>(
                   build_tree(best_gain.split_sets[1], score_function))}}};
     } else
-      return decision_node_t{.column_value = {},
+      return tree_t{.column_value = {},
                            .node_data = result_counts(rows)};
   }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-  static decision_node_t build_tree(rows_t const& rows, auto score_function) {
+  static tree_t build_tree(rows_t const& rows, auto score_function) {
     return build_tree(get_pointer_to_rows(rows), score_function);
   }
-  static decision_node_t build_tree(rows_t const& rows) {
+  static tree_t build_tree(rows_t const& rows) {
     return build_tree(rows, &entropy);
   }
 
@@ -262,7 +262,7 @@ struct decision_tree {
     }
   }
 
-  static result_counts_t classify(decision_node_t const& tree,
+  static result_counts_t classify(tree_t const& tree,
                                   observation_t const& observation) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
@@ -301,7 +301,7 @@ struct decision_tree {
 
   template <std::size_t I>
   static result_counts_t classify_column_with_missing_data(
-      decision_node_t const& tree, observation_t const& observation) {
+      tree_t const& tree, observation_t const& observation) {
     if constexpr (I < std::tuple_size_v<observation_t>) {
       if (I < tree.column_value.column)
         return classify_column_with_missing_data<I + 1>(tree, observation);
@@ -319,7 +319,7 @@ struct decision_tree {
   }
 
   static result_counts_t classify_with_missing_data(
-      decision_node_t const& tree, observation_t const& observation) {
+      tree_t const& tree, observation_t const& observation) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
     return classify_column_with_missing_data<0>(tree, observation);
@@ -342,7 +342,7 @@ struct decision_tree {
     return score(pruned) - score_unpruned(true_result, false_result, score);
   }
 
-  static void prune(decision_node_t& tree, double min_gain, auto score) {
+  static void prune(tree_t& tree, double min_gain, auto score) {
     if (auto* children = std::get_if<children_t>(&tree.node_data)) {
       prune(*children->true_path, min_gain, score);
       prune(*children->false_path, min_gain, score);
@@ -358,7 +358,7 @@ struct decision_tree {
             tree.node_data = pruned;
   }
 
-  static void prune(decision_node_t& tree, double min_gain) {
+  static void prune(tree_t& tree, double min_gain) {
     prune(tree, min_gain, &entropy);
   }
 };
