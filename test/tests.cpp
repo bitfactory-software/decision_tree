@@ -95,7 +95,21 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
   using namespace std::string_literals;
 
   auto tree = decision_tree::build_tree(test_data);
-  std::cout << "build_tree:\n" << decision_tree::print_node(tree, "") << "\n\n";
+  CHECK(to_string(tree) ==
+        R"(0:Google?
+T-> 3:21?
+   T-> {Premium: 3}
+   F-> 2:1?
+      T-> {basic: 1}
+      F-> {None: 1}
+F-> 0:Slashdot?
+   T-> {None: 3}
+   F-> 2:1?
+      T-> {basic: 4}
+      F-> 3:21?
+         T-> {basic: 1}
+         F-> {None: 3}
+)");
 
   static_assert(
       std::same_as<
@@ -103,52 +117,65 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
           std::tuple<std::optional<std::string>, std::optional<std::string>,
                      std::optional<bool>, std::optional<int>>>);
   auto prediction = decision_tree::classify(tree, {"(direct)", "USA", true, 5});
-  std::cout << R"-(classify(tree, {"(direct)", "USA", true, 5}): )-"
-            << decision_tree::print_result(prediction) << "\n\n";
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
+  CHECK(decision_tree::to_string(prediction) == "{basic: 4}");
 
   auto tree_prune_0_1 = decision_tree::build_tree(test_data);
   decision_tree::prune(tree_prune_0_1, 0.1);
-  std::cout << "tree_prune_0_1\n"
-            << decision_tree::print_node(tree_prune_0_1, "") << "\n\n";
+  CHECK(to_string(tree_prune_0_1) ==
+        R"(0:Google?
+T-> 3:21?
+   T-> {Premium: 3}
+   F-> 2:1?
+      T-> {basic: 1}
+      F-> {None: 1}
+F-> 0:Slashdot?
+   T-> {None: 3}
+   F-> 2:1?
+      T-> {basic: 4}
+      F-> 3:21?
+         T-> {basic: 1}
+         F-> {None: 3}
+)");
   auto tree_prune_1_0 = decision_tree::build_tree(test_data);
   decision_tree::prune(tree_prune_1_0, 1.0);
-  std::cout << "tree_prune_1_0\n"
-            << decision_tree::print_node(tree_prune_1_0, "") << "\n\n";
+  CHECK(to_string(tree_prune_1_0) ==
+        R"(0:Google?
+T-> 3:21?
+   T-> {Premium: 3}
+   F-> 2:1?
+      T-> {basic: 1}
+      F-> {None: 1}
+F-> {None: 6, basic: 5}
+)");
 
   {
     auto prediction_with_missing1 = decision_tree::classify_with_missing_data(
         tree, {"Google", {}, true, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree, {"Google", {}, true, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing1) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing1) ==
+          "{Premium: 2.25, basic: 0.25}");
     auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
         tree, {"Google", "France", {}, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree, {"Google", "France", {}, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing2) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing2) ==
+          "{None: 0.125, Premium: 2.25, basic: 0.125}");
     auto prediction_with_missing3 =
         decision_tree::classify_with_missing_data(tree, {"Google", {}, {}, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree, {"Google", {}, {}, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing3) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing3) ==
+          "{None: 0.125, Premium: 2.25, basic: 0.125}");
   }
 
   {
     auto prediction_with_missing1 = decision_tree::classify_with_missing_data(
         tree_prune_1_0, {"Google", {}, true, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", {}, true, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing1) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing1) ==
+          "{Premium: 2.25, basic: 0.25}");
     auto prediction_with_missing2 = decision_tree::classify_with_missing_data(
         tree_prune_1_0, {"Google", "France", {}, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", "France", {}, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing2) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing2) ==
+          "{None: 0.125, Premium: 2.25, basic: 0.125}");
     auto prediction_with_missing3 = decision_tree::classify_with_missing_data(
         tree_prune_1_0, {"Google", {}, {}, {}});
-    std::cout
-        << R"-(classify_with_missing_data(tree_prune_1_0, {"Google", {}, {}, {}}): )-"
-        << decision_tree::print_result(prediction_with_missing3) << "\n\n";
+    CHECK(decision_tree::to_string(prediction_with_missing3) ==
+          "{None: 0.125, Premium: 2.25, basic: 0.125}");
   }
 }

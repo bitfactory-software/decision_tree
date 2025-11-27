@@ -91,6 +91,12 @@ struct decision_tree {
     }
   };
 
+  static [[nodiscard]] std::string to_string(result_counts_t const& result_counts) {
+    std::stringstream s;
+    s << print_result{result_counts};
+    return s.str();
+  }
+
   struct column_value_t {
     std::size_t column = {};
     values_variant_t value;
@@ -129,6 +135,12 @@ struct decision_tree {
       }
     }
   };
+
+  friend [[nodiscard]] std::string to_string(tree_t const& tree) {
+    std::stringstream s;
+    s << decision_tree::print_node{tree};
+    return s.str();
+  }
 
   static pointer_to_rows_t get_pointer_to_rows(rows_t const& rows) {
     pointer_to_rows_t pointer_to_rows;
