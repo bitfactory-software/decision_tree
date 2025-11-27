@@ -342,7 +342,7 @@ struct decision_tree {
     return score(pruned) - score_unpruned(true_result, false_result, score);
   }
 
-  static void prune(decision_node& tree, double min_gain, auto score) {
+  static void prune(decision_node_t& tree, double min_gain, auto score) {
     if (auto* children = std::get_if<children_t>(&tree.node_data)) {
       prune(*children->true_path, min_gain, score);
       prune(*children->false_path, min_gain, score);
