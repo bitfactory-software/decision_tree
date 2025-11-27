@@ -221,23 +221,20 @@ struct decision_tree {
     }
   }
 
-  static tree_t build_tree(pointer_to_rows_t const& rows,
-                                  auto score_function) {
+  static tree_t build_tree(pointer_to_rows_t const& rows, auto score_function) {
     if (rows.empty()) return {};
     if (auto best_gain = find_best_gain<0>(
             rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
             score_function(result_counts(rows)), score_function);
         best_gain.value > 0) {
-      return tree_t{
-          .column_value = best_gain.criteria,
-          .node_data = node_data_t{children_t{
-              .true_path = std::make_unique<tree_t>(
-                  build_tree(best_gain.split_sets[0], score_function)),
-              .false_path = std::make_unique<tree_t>(
-                  build_tree(best_gain.split_sets[1], score_function))}}};
+      return tree_t{.column_value = best_gain.criteria,
+                    .node_data = node_data_t{children_t{
+                        .true_path = std::make_unique<tree_t>(build_tree(
+                            best_gain.split_sets[0], score_function)),
+                        .false_path = std::make_unique<tree_t>(build_tree(
+                            best_gain.split_sets[1], score_function))}}};
     } else
-      return tree_t{.column_value = {},
-                           .node_data = result_counts(rows)};
+      return tree_t{.column_value = {}, .node_data = result_counts(rows)};
   }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
   static tree_t build_tree(rows_t const& rows, auto score_function) {
