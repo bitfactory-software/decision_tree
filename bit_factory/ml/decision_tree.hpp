@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -148,7 +149,8 @@ struct decision_tree {
   [[nodiscard]] static pointer_to_rows_t get_pointer_to_rows(
       rows_t const& rows) {
     pointer_to_rows_t pointer_to_rows;
-    for (auto const& row : rows) pointer_to_rows.push_back(&row);
+    std::ranges::transform(rows, std::back_inserter(pointer_to_rows),
+                           [](row_t const& row) { return &row; });
     return pointer_to_rows;
   }
 
@@ -185,9 +187,8 @@ struct decision_tree {
 
   [[nodiscard]] static double result_counts_total(
       result_counts_t const& result_counts) {
-    double total = 0.0;
-    for (auto const& result_count : result_counts) total += result_count.second;
-    return total;
+    return std::ranges::fold_left(result_counts | std::views::values, 0.0,
+                                  std::plus<double>{});
   }
 
   [[nodiscard]] static double gini_impurity(result_counts_t const& counts) {
@@ -310,10 +311,10 @@ struct decision_tree {
         classify_with_missing_data(*children.false_path, observation);
     auto sum_true = sum(result_true);
     auto sum_false = sum(result_false);
-    auto sum = sum_true + sum_false;
+    auto sum_both = sum_true + sum_false;
     result_counts_t combined_result_counts;
-    add_weighted(combined_result_counts, result_true, sum_true / sum);
-    add_weighted(combined_result_counts, result_false, sum_false / sum);
+    add_weighted(combined_result_counts, result_true, sum_true / sum_both);
+    add_weighted(combined_result_counts, result_false, sum_false / sum_both);
     return combined_result_counts;
   }
 
@@ -373,14 +374,12 @@ struct decision_tree {
 
   [[nodiscard]] static tree_t prune(tree_t const& tree, double min_gain,
                                     auto score) {
-    if (auto* result_counts = std::get_if<result_counts_t>(&tree.node_data))
+    if (std::holds_alternative<result_counts_t>(tree.node_data))
       return tree_t{.column_value = tree.column_value,
                     .node_data = std::get<result_counts_t>(tree.node_data)};
 
-    tree_t pruned {
-      .column_value = tree.column_value,
-      .node_data = prune_children(tree, min_gain, score)
-    };
+    tree_t pruned{.column_value = tree.column_value,
+                  .node_data = prune_children(tree, min_gain, score)};
     auto& pruned_children = std::get<children_t>(pruned.node_data);
     if (auto true_result =
             std::get_if<result_counts_t>(&pruned_children.true_path->node_data))
