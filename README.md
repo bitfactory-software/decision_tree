@@ -1,5 +1,4 @@
-
-[![CMake on multiple platforms](https://github.com/bitfactory-software/decision_tree/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/bitfactory-software/decision_tree/actions/workflows/cmake-multi-platform.yml)
+[![CI](https://github.com/bitfactory-software/decision_tree/actions/workflows/CI.yml/badge.svg)](https://github.com/bitfactory-software/decision_tree/actions/workflows/CI.yml)
 
 # decision_tree
 
