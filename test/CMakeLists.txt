@@ -19,7 +19,7 @@ endif()
 
 include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
 
-add_executable(tests  "tests.cpp"  )
+add_executable(tests  "unit_tests.cpp" "smoke_tests.cpp" )
 target_link_libraries(
   tests
   PRIVATE decision_tree::decision_tree_warnings
