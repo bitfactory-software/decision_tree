@@ -3,11 +3,6 @@
 // #include <print>
 #include <string>
 
-namespace {
-// referrer, loaction, read FAQ, pages viewed, service choosen
-
-}  // namespace
-
 TEST_CASE("build_tree1") {
   using namespace bit_factory;
   using decision_tree =
