@@ -56,5 +56,5 @@ F-> {: 1, Y: 1}
   auto test = [&](decision_tree::observation_t const& observation) {
     return decision_tree::to_string(decision_tree::classify(tree, observation));
   };
-  CHECK(test({___, ___, ___, ___, ___, ___, Y, ___}) == "");
+  CHECK(test({___, ___, ___, ___, ___, ___, Y, ___}) == "{: 1, X: 1, Y: 1}");
 }
