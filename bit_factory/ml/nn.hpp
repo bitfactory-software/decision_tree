@@ -70,10 +70,10 @@ class data_base_t {
   edge_map_t const& output_edges() const { return output_edges_; }
   hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
 
-  double get_input_strengh(edge_t edge) {
+  double get_input_strengh(edge_t edge) const {
     return get_strengh(input_edges_, edge, -0.2);
   }
-  double get_output_strengh(edge_t edge) {
+  double get_output_strengh(edge_t edge) const {
     return get_strengh(output_edges_, edge, 0.0);
   }
 
@@ -100,7 +100,7 @@ class data_base_t {
                   0.1);
   }
 
-  ids_t get_hidden_ids(ids_t const& in_ids, ids_t const& out_ids) {
+  ids_t get_hidden_ids(ids_t const& in_ids, ids_t const& out_ids) const {
     std::set<std::size_t> hidden_ids;
     for (auto const& edge :
          input_edges_ | std::views::filter([&](auto const& node) {
@@ -116,10 +116,34 @@ class data_base_t {
   }
 };
 
-struct feed_forward_data_t {
+struct query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
-  ids_t input_ids_, output_ids_;
+  ids_t input_ids_, hidden_ids_, output_ids_;
+
+  query_t(data_base_t const& db, ids_t const& input_ids,
+          ids_t const& output_ids) {
+    input_ids_ = input_ids;
+    hidden_ids_ = db.get_hidden_ids(input_ids, output_ids);
+    output_ids_ = output_ids;
+    ai_.append_range(std::views::repeat(1.0, input_ids.size()));
+    ah_.append_range(std::views::repeat(1.0, hidden_ids_.size()));
+    ao_.append_range(std::views::repeat(1.0, output_ids.size()));
+
+    wi_.resize(input_ids.size());
+    for (auto i : input_ids) {
+      wi_[i].resize(hidden_ids_.size());
+      for (auto h : hidden_ids_)
+        wi_[i][h] = db.get_input_strengh({.from = i, .to = h});
+    }
+
+    wo_.resize(hidden_ids_.size());
+    for (auto h : hidden_ids_) {
+      wo_[h].resize(output_ids.size());
+      for (auto o : output_ids)
+        wo_[h][o] = db.get_output_strengh({.from = h, .to = o});
+    }
+  }
 };
 
 // inline feed_forward_data_t setup_network(
