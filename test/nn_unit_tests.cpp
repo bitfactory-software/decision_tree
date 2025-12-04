@@ -370,7 +370,6 @@ constexpr auto data{
 |D3 |D3 |   |   |D3 |   |D3 |   |   |
 |D3 |   |   |D3 |   |D3 |   |   |D3 |)"sv};
 
-constexpr auto observation{R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv};
 using namespace bit_factory::ml;
 
 std::pair<nn::in_signals_t, nn::out_signals_t> parse_signals(auto line) {
@@ -390,47 +389,36 @@ std::pair<nn::in_signals_t, nn::out_signals_t> parse_signals(auto line) {
   return {in_signals, out_signals};
 }
 
-TEST_CASE("nn2") {
-  constexpr auto nl{"\n"sv};
-  nn::data_base_t db;
-
-  for (auto line : std::views::split(data, nl)) {
-    auto [in_signals, out_signals] = parse_signals(line);
-    // for (auto [i, word] :
-    //      std::views::split(line, "|"sv) | std::views::enumerate) {
-    //   if (i == 0) continue;
-    //   auto token = std::format("{}|{}", i, std::string_view(word));
-    //   //      std::println("token{}", token);
-    //   if (i == 10) continue;
-    //   if (i < 9) {
-    //     in.insert(token);
-    //     db.add_in({token});
-    //     in_signals.push_back(token);
-    //   } else {
-    //     db.add_out({token});
-    //     out.insert(token);
-    //     out_signal = token;
-    //   }
-    // }
-    db.add_in(in_signals);
-    db.add_out(out_signals);
-    auto io_ids = db.get_io_ids(in_signals, out_signals);
-    nn::train(db, io_ids, *db.get_out_id(out_signals.front()));
-    /*  for (auto edge : db.input_edges())
-        std::println("{}, {}, {}", edge.first.from, edge.first.to,
-      edge.second); for (auto edge : db.output_edges()) std::println("{}, {},
-      {}", edge.first.from, edge.first.to, edge.second);*/
-
-    auto prediction_trained = nn::query_t{db, io_ids}.feed_forward();
-    std::println("prediction: {}", prediction_trained);
-  }
-  for (auto i : db.get_in_signals()) std::println("in: {}", i);
-  for (auto o : db.get_out_signals()) std::println("out: {}", o);
-
+void predict(nn::data_base_t db, auto observation) {
   auto [observation_signals, _] = parse_signals(observation);
   nn::out_signals_t out_signals{std::from_range, db.get_out_signals()};
   auto io_ids = db.get_io_ids(observation_signals, out_signals);
   auto prediction_for_observation = nn::query_t{db, io_ids}.feed_forward();
   std::println("prediction {} -> {}", observation_signals,
                std::views::zip(prediction_for_observation, out_signals));
+}
+
+TEST_CASE("nn2") {
+  constexpr auto nl{"\n"sv};
+  nn::data_base_t db;
+
+  for (auto line : std::views::split(data, nl)) {
+    auto [in_signals, out_signals] = parse_signals(line);
+    db.add_in(in_signals);
+    db.add_out(out_signals);
+    auto train_ids = db.get_io_ids(
+        in_signals, nn::out_signals_t{std::from_range, db.get_out_signals()});
+    nn::train(db, train_ids, *db.get_out_id(out_signals.front()));
+
+    auto prediction_trained = nn::query_t{db, train_ids}.feed_forward();
+    std::println("prediction: {}", prediction_trained);
+  }
+  for (auto i : db.get_in_signals()) std::println("in: {}", i);
+  for (auto o : db.get_out_signals()) std::println("out: {}", o);
+
+  predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|D3 |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
 }
