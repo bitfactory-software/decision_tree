@@ -26,8 +26,14 @@ TEST_CASE("nn1") {
   auto hidden_ids = db.get_hidden_ids({1}, {0, 2});
   CHECK(hidden_ids.size() == 1);
   CHECK(std::ranges::find(hidden_ids, 0) != hidden_ids.end());
-  auto prediction = query_t{db, {0, 1}, {0, 1, 2}}.feed_forward();
-  std::println("{}", prediction);
-  CHECK(prediction.size() == 3);
-  for (auto v : prediction) CHECK_THAT(v, WithinAbs(0.076, 0.01));
+  auto prediction_untrained = query_t{db, {0, 1}, {0, 1, 2}}.feed_forward();
+  std::println("{}", prediction_untrained);
+  CHECK(prediction_untrained.size() == 3);
+  for (auto v : prediction_untrained) CHECK_THAT(v, WithinAbs(0.076, 0.01));
+  train(db, {0, 1}, {0, 1, 2}, 0);
+  auto prediction_trained = query_t{db, {0, 1}, {0, 1, 2}}.feed_forward();
+  std::println("{}", prediction_trained);
+  CHECK_THAT(prediction_trained[0], WithinAbs(0.335, 0.001));
+  CHECK_THAT(prediction_trained[1], WithinAbs(0.055, 0.001));
+  CHECK_THAT(prediction_trained[2], WithinAbs(0.055, 0.001));
 }

@@ -117,19 +117,25 @@ class data_base_t {
   }
 };
 
+inline auto init_weights(std::size_t size, double init = 1.0) {
+  return weights_t{std::from_range, std::views::repeat(init, size)};
+}
+inline void init_weights(weights_t& weights, std::size_t size) {
+  weights = init_weights(size);
+}
+
 class query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
   ids_t input_ids_, hidden_ids_, output_ids_;
 
-  static void init_weights(weights_t& weights, std::size_t size) {
-    weights = weights_t{std::from_range, std::views::repeat(1.0, size)};
-  }
   void init_all_weights() {
     init_weights(ai_, input_ids_.size());
     init_weights(ah_, hidden_ids_.size());
     init_weights(ao_, output_ids_.size());
   }
+
+  auto dtanh(double y) { return 1.0 - y * y; }
 
  public:
   query_t(data_base_t const& db, ids_t const& input_ids,
@@ -172,6 +178,60 @@ class query_t {
 
     return ao_;
   }
+
+  void back_propagate(weights_t const& targets, double n = 0.5) {
+    // calculate errors for output
+    weights_t output_deltas;
+    init_weights(output_deltas, output_ids_.size());
+    for (auto o : std::views::iota(0u, output_ids_.size()))
+      output_deltas[o] = dtanh(ao_[o]) * (targets[o] - ao_[o]);
+
+    // calculate errors for hiddend layer
+    weights_t hidden_deltas;
+    init_weights(hidden_deltas, hidden_ids_.size());
+    for (auto h : std::views::iota(0u, hidden_ids_.size())) {
+      auto error = 0.0;
+      for (auto o : std::views::iota(0u, output_ids_.size()))
+        error += output_deltas[o] * wo_[h][o];
+      hidden_deltas[h] = dtanh(ah_[h]) * error;
+    }
+
+    // update output weights
+    for (auto h : std::views::iota(0u, hidden_ids_.size()))
+      for (auto o : std::views::iota(0u, output_ids_.size()))
+        wo_[h][o] += output_deltas[o] * ah_[h] * n;
+
+    // update input weights
+    for (auto i : std::views::iota(0u, input_ids_.size()))
+      for (auto h : std::views::iota(0u, hidden_ids_.size()))
+        wi_[i][h] += hidden_deltas[h] * ai_[i] * n;
+  }
+
+  void update(data_base_t& db) {
+    for (auto i : std::views::iota(0u, input_ids_.size()))
+      for (auto h : std::views::iota(0u, hidden_ids_.size()))
+        db.set_input_strengh({.from = input_ids_[i], .to = hidden_ids_[h]},
+                             wi_[i][h]);
+    for (auto h : std::views::iota(0u, hidden_ids_.size()))
+      for (auto o : std::views::iota(0u, output_ids_.size()))
+        db.set_output_strengh({.from = hidden_ids_[h], .to = output_ids_[o]},
+                              wo_[h][o]);
+  }
 };
+
+inline std::size_t index_of(auto const& vector, auto value) {
+  auto found = std::ranges::find(vector, value);
+  return vector.begin() - found;
+}
+
+void train(data_base_t& db, ids_t const& input_ids, ids_t const& output_ids,
+           std::size_t answer_id) {
+  query_t query{db, input_ids, output_ids};
+  query.feed_forward();
+  weights_t targets = init_weights(output_ids.size(), 0.0);
+  targets[index_of(output_ids, answer_id)] = 1.0;
+  query.back_propagate(targets);
+  query.update(db);
+}
 
 }  // namespace bit_factory::ml::nn
