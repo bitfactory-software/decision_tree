@@ -22,4 +22,7 @@ TEST_CASE("nn1") {
   auto hidden_ids = db.get_hidden_ids({1}, {0,2});
   CHECK(hidden_ids.size() == 1);
   CHECK(std::ranges::find(hidden_ids, 0) != hidden_ids.end());
+  auto prediction = query_t{db,{0, 1}, {0, 1, 2}}.feed_forward();
+  std::println("{}",prediction);
+
 }

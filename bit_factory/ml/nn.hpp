@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -116,22 +117,31 @@ class data_base_t {
   }
 };
 
-struct query_t {
+class query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
   ids_t input_ids_, hidden_ids_, output_ids_;
 
+  static void init_weights(weights_t& weights, std::size_t size) {
+    weights = weights_t{std::from_range, std::views::repeat(1.0, size)};
+  }
+  void init_all_weights() {
+    init_weights(ai_, input_ids_.size());
+    init_weights(ah_, hidden_ids_.size());
+    init_weights(ao_, output_ids_.size());
+  }
+
+ public:
   query_t(data_base_t const& db, ids_t const& input_ids,
           ids_t const& output_ids) {
     input_ids_ = input_ids;
     hidden_ids_ = db.get_hidden_ids(input_ids, output_ids);
     output_ids_ = output_ids;
-    ai_.append_range(std::views::repeat(1.0, input_ids.size()));
-    ah_.append_range(std::views::repeat(1.0, hidden_ids_.size()));
-    ao_.append_range(std::views::repeat(1.0, output_ids.size()));
 
-    wi_.resize(input_ids.size());
-    for (auto i : input_ids) {
+    init_all_weights();
+
+    wi_.resize(input_ids_.size());
+    for (auto i : input_ids_) {
       wi_[i].resize(hidden_ids_.size());
       for (auto h : hidden_ids_)
         wi_[i][h] = db.get_input_strengh({.from = i, .to = h});
@@ -139,76 +149,29 @@ struct query_t {
 
     wo_.resize(hidden_ids_.size());
     for (auto h : hidden_ids_) {
-      wo_[h].resize(output_ids.size());
-      for (auto o : output_ids)
+      wo_[h].resize(output_ids_.size());
+      for (auto o : output_ids_)
         wo_[h][o] = db.get_output_strengh({.from = h, .to = o});
     }
   }
+
+  weights_t feed_forward() {
+    for (auto h : std::views::iota(0u, hidden_ids_.size())) {
+      auto sum = 0.0;
+      for (auto i : std::views::iota(0u, input_ids_.size()))
+        sum += ai_[i] * wi_[i][h];
+      ah_[h] = std::tanh(sum);
+    }
+
+    for (auto o : std::views::iota(0u, output_ids_.size())) {
+      auto sum = 0.0;
+      for (auto h : std::views::iota(0u, hidden_ids_.size()))
+        sum += ah_[h] * wo_[h][o];
+      ao_[o] = std::tanh(sum);
+    }
+
+    return ao_;
+  }
 };
-
-// inline feed_forward_data_t setup_network(
-//     data_t const& data, std::vector<std::size_t> const& input_ids,
-//     std::vector<std::size_t> const& output_ids) {
-//   feed_forward_data_t feed_forward_data;
-//   feed_forward_data.input_ids_ = input_ids;
-//   feed_forward_data.output_ids_ = output_ids;
-//   feed_forward_data.ai_.append_range(std::views::repeat(1.0,
-//   input_ids.size())); feed_forward_data.ah_.append_range(
-//       std::views::repeat(1.0, data.hidden_nodes_.size()));
-//   feed_forward_data.ao_.append_range(
-//       std::views::repeat(1.0, output_ids.size()));
-//
-//   feed_forward_data.wi_.resize(input_ids.size());
-//   for (auto i : input_ids) {
-//     feed_forward_data.wi_[i].resize(data.hidden_nodes_.size());
-//     for (auto h : std::views::values(data.hidden_nodes_))
-//       feed_forward_data.wi_[i][h] =
-//           get_input_strengh(data, {.from = i, .to = h});
-//   }
-//
-//   feed_forward_data.wo_.resize(data.hidden_nodes_.size());
-//   for (auto h : std::views::values(data.hidden_nodes_)) {
-//     feed_forward_data.wo_[h].resize(output_ids.size());
-//     for (auto o : output_ids)
-//       feed_forward_data.wo_[h][o] =
-//           get_input_strengh(data, {.from = h, .to = o});
-//   }
-// }
-
-// inline weights_t feed_forward(feed_forward_data_t& feed_forward_data) {
-//   feed_forward_data.ai_ =
-//       weights_t{std::from_range,
-//                 std::views::repeat(1.0,
-//                 feed_forward_data.input_ids_.size())};
-//
-// for (auto j : input_ids) {
-//
-//     for (auto 1: std::views::values(data.hidden_nodes_))
-//       feed_forward_data.wi_[i][h] =
-//           get_input_strengh(data, {.from = i, .to = h});
-//
-// feed_forward_data.ah_.append_range(
-//     std::views::repeat(1.0, data.hidden_nodes_.size()));
-// feed_forward_data.ao_.append_range(std::views::repeat(1.0,
-// output_ids.size()));
-//
-// feed_forward_data.wi_.resize(input_ids.size());
-// for (auto i : input_ids) {
-//   feed_forward_data.wi_[i].resize(data.hidden_nodes_.size());
-//   for (auto h : std::views::values(data.hidden_nodes_))
-//     feed_forward_data.wi_[i][h] = get_input_strengh(data, {.from = i, .to =
-//     h});
-// }
-//
-// feed_forward_data.wo_.resize(data.hidden_nodes_.size());
-// for (auto h : std::views::values(data.hidden_nodes_)) {
-//   feed_forward_data.wo_[h].resize(output_ids.size());
-//   for (auto o : output_ids)
-//     feed_forward_data.wo_[h][o] = get_input_strengh(data, {.from = h, .to =
-//     o});
-// }
-//
-// return feed_forward_data;
-// }
 
 }  // namespace bit_factory::ml::nn
