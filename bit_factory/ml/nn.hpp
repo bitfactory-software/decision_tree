@@ -3,11 +3,12 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <ranges>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <optional>
 
 namespace bit_factory::ml::nn {
 
@@ -42,7 +43,8 @@ class data_base_t {
         in, std::views::iota(to.size(), to.size() + in.size())));
   }
 
-  static std::optional<std::size_t> get_io_id(io_nodes_t const& from, std::string const& token) {
+  static std::optional<std::size_t> get_io_id(io_nodes_t const& from,
+                                              std::string const& token) {
     if (auto found = from.find(token); found != from.end())
       return found->second;
     return {};
@@ -64,9 +66,9 @@ class data_base_t {
   std::optional<std::size_t> get_out_id(std::string const& token) {
     return get_io_id(output_nodes_, token);
   }
-  edge_map_t const& input_edges() const{ return input_edges_; }
-  edge_map_t const& output_edges() const{ return output_edges_; }
-  hidden_nodes_t const& hidden_nodes() const{ return hidden_nodes_; }
+  edge_map_t const& input_edges() const { return input_edges_; }
+  edge_map_t const& output_edges() const { return output_edges_; }
+  hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
 
   double get_input_strengh(edge_t edge) {
     return get_strengh(input_edges_, edge, -0.2);
@@ -97,6 +99,21 @@ class data_base_t {
       set_strengh(output_edges_, edge_t{.from = hidden_id, .to = output_id},
                   0.1);
   }
+
+  ids_t get_hidden_ids(ids_t const& in_ids, ids_t const& out_ids) {
+    std::set<std::size_t> hidden_ids;
+    for (auto const& edge :
+         input_edges_ | std::views::filter([&](auto const& node) {
+           return std::ranges::find(in_ids, node.first.from) != in_ids.end();
+         }) | std::views::keys)
+      hidden_ids.insert(edge.to);
+    for (auto const& edge :
+         output_edges_ | std::views::filter([&](auto const& node) {
+           return std::ranges::find(out_ids, node.first.to) != out_ids.end();
+         }) | std::views::keys)
+      hidden_ids.insert(edge.from);
+    return ids_t{std::from_range, hidden_ids};
+  }
 };
 
 struct feed_forward_data_t {
@@ -105,34 +122,34 @@ struct feed_forward_data_t {
   ids_t input_ids_, output_ids_;
 };
 
-//inline feed_forward_data_t setup_network(
-//    data_t const& data, std::vector<std::size_t> const& input_ids,
-//    std::vector<std::size_t> const& output_ids) {
-//  feed_forward_data_t feed_forward_data;
-//  feed_forward_data.input_ids_ = input_ids;
-//  feed_forward_data.output_ids_ = output_ids;
-//  feed_forward_data.ai_.append_range(std::views::repeat(1.0, input_ids.size()));
-//  feed_forward_data.ah_.append_range(
-//      std::views::repeat(1.0, data.hidden_nodes_.size()));
-//  feed_forward_data.ao_.append_range(
-//      std::views::repeat(1.0, output_ids.size()));
+// inline feed_forward_data_t setup_network(
+//     data_t const& data, std::vector<std::size_t> const& input_ids,
+//     std::vector<std::size_t> const& output_ids) {
+//   feed_forward_data_t feed_forward_data;
+//   feed_forward_data.input_ids_ = input_ids;
+//   feed_forward_data.output_ids_ = output_ids;
+//   feed_forward_data.ai_.append_range(std::views::repeat(1.0,
+//   input_ids.size())); feed_forward_data.ah_.append_range(
+//       std::views::repeat(1.0, data.hidden_nodes_.size()));
+//   feed_forward_data.ao_.append_range(
+//       std::views::repeat(1.0, output_ids.size()));
 //
-//  feed_forward_data.wi_.resize(input_ids.size());
-//  for (auto i : input_ids) {
-//    feed_forward_data.wi_[i].resize(data.hidden_nodes_.size());
-//    for (auto h : std::views::values(data.hidden_nodes_))
-//      feed_forward_data.wi_[i][h] =
-//          get_input_strengh(data, {.from = i, .to = h});
-//  }
+//   feed_forward_data.wi_.resize(input_ids.size());
+//   for (auto i : input_ids) {
+//     feed_forward_data.wi_[i].resize(data.hidden_nodes_.size());
+//     for (auto h : std::views::values(data.hidden_nodes_))
+//       feed_forward_data.wi_[i][h] =
+//           get_input_strengh(data, {.from = i, .to = h});
+//   }
 //
-//  feed_forward_data.wo_.resize(data.hidden_nodes_.size());
-//  for (auto h : std::views::values(data.hidden_nodes_)) {
-//    feed_forward_data.wo_[h].resize(output_ids.size());
-//    for (auto o : output_ids)
-//      feed_forward_data.wo_[h][o] =
-//          get_input_strengh(data, {.from = h, .to = o});
-//  }
-//}
+//   feed_forward_data.wo_.resize(data.hidden_nodes_.size());
+//   for (auto h : std::views::values(data.hidden_nodes_)) {
+//     feed_forward_data.wo_[h].resize(output_ids.size());
+//     for (auto o : output_ids)
+//       feed_forward_data.wo_[h][o] =
+//           get_input_strengh(data, {.from = h, .to = o});
+//   }
+// }
 
 // inline weights_t feed_forward(feed_forward_data_t& feed_forward_data) {
 //   feed_forward_data.ai_ =

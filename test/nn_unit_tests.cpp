@@ -19,4 +19,7 @@ TEST_CASE("nn1") {
     std::println("{}, {}, {}", edge.first.from, edge.first.to, edge.second);
   for (auto edge : db.output_edges())
     std::println("{}, {}, {}", edge.first.from, edge.first.to, edge.second);
+  auto hidden_ids = db.get_hidden_ids({1}, {0,2});
+  CHECK(hidden_ids.size() == 1);
+  CHECK(std::ranges::find(hidden_ids, 0) != hidden_ids.end());
 }
