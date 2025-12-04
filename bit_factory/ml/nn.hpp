@@ -47,9 +47,10 @@ class data_base_t {
     edge_map[edge] = weight;
   }
 
-  static void add_to(io_nodes_t& to, std::vector<std::string> const& in) {
-    to.insert_range(std ::views::zip(
-        in, std::views::iota(to.size(), to.size() + in.size())));
+  static void add_to(io_nodes_t& to, auto const& signals) {
+    for (auto const& signal : signals)
+      if (auto found = to.find(signal); found == to.end())
+        to[signal] = to.size();
   }
 
   static std::optional<std::size_t> get_io_id(io_nodes_t const& from,
@@ -67,6 +68,13 @@ class data_base_t {
   data_base_t& add_out(out_signals_t const& out) {
     add_to(output_nodes_, out);
     return *this;
+  }
+
+  auto get_in_signals() const{
+      return input_nodes_ | std::views::keys;
+  }
+  auto get_out_signals() const{
+      return output_nodes_ | std::views::keys;
   }
 
   std::optional<std::size_t> get_in_id(in_signal_t const& token) {
@@ -123,6 +131,9 @@ class data_base_t {
       set_strengh(output_edges_, edge_t{.from = hidden_id, .to = output_id},
                   0.1);
   }
+  void generate_hidden_node(io_ids_t const& io_ids) {
+    generate_hidden_node(io_ids.in, io_ids.out);
+  }
 
   ids_t get_hidden_ids(io_ids_t const& io_ids) const {
     std::set<std::size_t> hidden_ids;
@@ -153,6 +164,13 @@ inline double& at_grow(std::vector<weights_t>& w, std::size_t i,
                        std::size_t j) {
   if (w.size() <= i) w.resize(i + 1);
   if (w[i].size() < j + 1) w[i].resize(j + 1);
+  return w[i][j];
+}
+
+inline double at_safe(std::vector<weights_t> const& w, std::size_t i,
+                      std::size_t j) {
+  if (w.size() <= i) return 0.0;
+  if (w[i].size() < j + 1) return 0.0;
   return w[i][j];
 }
 
@@ -190,14 +208,14 @@ class query_t {
     for (auto h : std::views::iota(0u, hidden_ids_.size())) {
       auto sum = 0.0;
       for (auto i : std::views::iota(0u, io_ids_.in.size()))
-        sum += ai_[i] * wi_[i][h];
+        sum += ai_[i] * at_safe(wi_, i, h);
       ah_[h] = std::tanh(sum);
     }
 
     for (auto o : std::views::iota(0u, io_ids_.out.size())) {
       auto sum = 0.0;
       for (auto h : std::views::iota(0u, hidden_ids_.size()))
-        sum += ah_[h] * wo_[h][o];
+        sum += ah_[h] * at_safe(wo_, h, o);
       ao_[o] = std::tanh(sum);
     }
 
@@ -224,12 +242,12 @@ class query_t {
     // update output weights
     for (auto h : std::views::iota(0u, hidden_ids_.size()))
       for (auto o : std::views::iota(0u, io_ids_.out.size()))
-        wo_[h][o] += output_deltas[o] * ah_[h] * n;
+        at_grow(wo_, h, o) += output_deltas[o] * ah_[h] * n;
 
     // update input weights
     for (auto i : std::views::iota(0u, io_ids_.in.size()))
       for (auto h : std::views::iota(0u, hidden_ids_.size()))
-        wi_[i][h] += hidden_deltas[h] * ai_[i] * n;
+        at_grow(wi_, i, h) += hidden_deltas[h] * ai_[i] * n;
   }
 
   void update(data_base_t& db) {
@@ -250,6 +268,7 @@ inline std::size_t index_of(auto const& vector, auto value) {
 }
 
 void train(data_base_t& db, io_ids_t const& io_ids, std::size_t answer_id) {
+  db.generate_hidden_node(io_ids);
   query_t query{db, io_ids};
   query.feed_forward();
   weights_t targets = init_weights(io_ids.out.size(), 0.0);
