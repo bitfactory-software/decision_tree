@@ -124,6 +124,13 @@ inline void init_weights(weights_t& weights, std::size_t size) {
   weights = init_weights(size);
 }
 
+inline double& at_grow(std::vector<weights_t>& w, std::size_t i,
+                       std::size_t j) {
+  if (w.size() <= i) w.resize(i + 1);
+  if (w[i].size() < j + 1) w[i].resize(j + 1);
+  return w[i][j];
+}
+
 class query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
@@ -146,19 +153,13 @@ class query_t {
 
     init_all_weights();
 
-    wi_.resize(input_ids_.size());
-    for (auto i : input_ids_) {
-      wi_[i].resize(hidden_ids_.size());
+    for (auto i : input_ids_)
       for (auto h : hidden_ids_)
-        wi_[i][h] = db.get_input_strengh({.from = i, .to = h});
-    }
+        at_grow(wi_, i, h) = db.get_input_strengh({.from = i, .to = h});
 
-    wo_.resize(hidden_ids_.size());
-    for (auto h : hidden_ids_) {
-      wo_[h].resize(output_ids_.size());
+    for (auto h : hidden_ids_)
       for (auto o : output_ids_)
-        wo_[h][o] = db.get_output_strengh({.from = h, .to = o});
-    }
+        at_grow(wo_, h, o) = db.get_output_strengh({.from = h, .to = o});
   }
 
   weights_t feed_forward() {
