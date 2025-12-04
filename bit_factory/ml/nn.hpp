@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cassert>
+
 
 namespace bit_factory::ml::nn {
 
@@ -264,7 +266,7 @@ class query_t {
 
 inline std::size_t index_of(auto const& vector, auto value) {
   auto found = std::ranges::find(vector, value);
-  return vector.begin() - found;
+  return found - vector.begin();
 }
 
 void train(data_base_t& db, io_ids_t const& io_ids, std::size_t answer_id) {

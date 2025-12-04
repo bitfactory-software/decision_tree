@@ -410,12 +410,13 @@ TEST_CASE("nn2") {
         in_signals, nn::out_signals_t{std::from_range, db.get_out_signals()});
     nn::train(db, train_ids, *db.get_out_id(out_signals.front()));
 
-    auto prediction_trained = nn::query_t{db, train_ids}.feed_forward();
-    std::println("prediction: {}", prediction_trained);
+    //auto prediction_trained = nn::query_t{db, train_ids}.feed_forward();
+    //std::println("prediction: {}", prediction_trained);
   }
   for (auto i : db.get_in_signals()) std::println("in: {}", i);
   for (auto o : db.get_out_signals()) std::println("out: {}", o);
 
+  predict(db, R"(|   |D3 |   |D3 |   |   |   |D3 |)"sv);
   predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
   predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
   predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
