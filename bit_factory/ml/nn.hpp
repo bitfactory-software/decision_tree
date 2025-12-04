@@ -23,6 +23,14 @@ using io_nodes_t = std::map<std::string, std::size_t>;
 using edge_map_t = std::map<edge_t, double>;
 using weights_t = std::vector<double>;
 using ids_t = std::vector<std::size_t>;
+using in_signal_t = std::string;
+using in_signals_t = std::vector<in_signal_t>;
+using out_signal_t = std::string;
+using out_signals_t = std::vector<out_signal_t>;
+
+struct io_ids_t {
+  ids_t in, out;
+};
 
 class data_base_t {
   edge_map_t input_edges_, output_edges_;
@@ -52,21 +60,37 @@ class data_base_t {
   }
 
  public:
-  data_base_t& add_in(std::vector<std::string> const& in) {
+  data_base_t& add_in(in_signals_t const& in) {
     add_to(input_nodes_, in);
     return *this;
   }
-  data_base_t& add_out(std::vector<std::string> const& out) {
+  data_base_t& add_out(out_signals_t const& out) {
     add_to(output_nodes_, out);
     return *this;
   }
 
-  std::optional<std::size_t> get_in_id(std::string const& token) {
+  std::optional<std::size_t> get_in_id(in_signal_t const& token) {
     return get_io_id(input_nodes_, token);
   }
-  std::optional<std::size_t> get_out_id(std::string const& token) {
+  std::optional<std::size_t> get_out_id(out_signal_t const& token) {
     return get_io_id(output_nodes_, token);
   }
+  io_ids_t get_io_ids(in_signals_t const& in_signals,
+                      out_signals_t const& out_signals) {
+    return io_ids_t{
+        .in = {std::from_range,
+               in_signals | std::views::transform(
+                                [&](in_signal_t const& signal) -> std::size_t {
+                                  return *get_in_id(signal);
+                                })},
+        .out = {
+            std::from_range,
+            out_signals | std::views::transform(
+                              [&](out_signal_t const& signal) -> std::size_t {
+                                return *get_out_id(signal);
+                              })}};
+  }
+
   edge_map_t const& input_edges() const { return input_edges_; }
   edge_map_t const& output_edges() const { return output_edges_; }
   hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
@@ -85,8 +109,7 @@ class data_base_t {
     set_strengh(output_edges_, edge, weight);
   }
 
-  void generate_hidden_node(std::vector<std::size_t> input_ids,
-                            std::vector<std::size_t> const& output_ids) {
+  void generate_hidden_node(ids_t input_ids, ids_t const& output_ids) {
     std::ranges::sort(input_ids);
     auto id = std::format("{}", input_ids);
     if (auto found = hidden_nodes_.find(id); found != hidden_nodes_.end())
@@ -101,16 +124,18 @@ class data_base_t {
                   0.1);
   }
 
-  ids_t get_hidden_ids(ids_t const& in_ids, ids_t const& out_ids) const {
+  ids_t get_hidden_ids(io_ids_t const& io_ids) const {
     std::set<std::size_t> hidden_ids;
     for (auto const& edge :
-         input_edges_ | std::views::filter([&](auto const& node) {
-           return std::ranges::find(in_ids, node.first.from) != in_ids.end();
+         input_edges_ | std::views::filter([&](auto const& hidden_node) {
+           return std::ranges::find(io_ids.in, hidden_node.first.from) !=
+                  io_ids.in.end();
          }) | std::views::keys)
       hidden_ids.insert(edge.to);
     for (auto const& edge :
-         output_edges_ | std::views::filter([&](auto const& node) {
-           return std::ranges::find(out_ids, node.first.to) != out_ids.end();
+         output_edges_ | std::views::filter([&](auto const& hidden_node) {
+           return std::ranges::find(io_ids.out, hidden_node.first.to) !=
+                  io_ids.out.end();
          }) | std::views::keys)
       hidden_ids.insert(edge.from);
     return ids_t{std::from_range, hidden_ids};
@@ -134,43 +159,42 @@ inline double& at_grow(std::vector<weights_t>& w, std::size_t i,
 class query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
-  ids_t input_ids_, hidden_ids_, output_ids_;
+  io_ids_t io_ids_;
+  ids_t hidden_ids_;
 
   void init_all_weights() {
-    init_weights(ai_, input_ids_.size());
+    init_weights(ai_, io_ids_.in.size());
     init_weights(ah_, hidden_ids_.size());
-    init_weights(ao_, output_ids_.size());
+    init_weights(ao_, io_ids_.out.size());
   }
 
   auto dtanh(double y) { return 1.0 - y * y; }
 
  public:
-  query_t(data_base_t const& db, ids_t const& input_ids,
-          ids_t const& output_ids) {
-    input_ids_ = input_ids;
-    hidden_ids_ = db.get_hidden_ids(input_ids, output_ids);
-    output_ids_ = output_ids;
+  query_t(data_base_t const& db, io_ids_t const& io_ids) {
+    io_ids_ = io_ids;
+    hidden_ids_ = db.get_hidden_ids(io_ids);
 
     init_all_weights();
 
-    for (auto i : input_ids_)
+    for (auto i : io_ids_.in)
       for (auto h : hidden_ids_)
         at_grow(wi_, i, h) = db.get_input_strengh({.from = i, .to = h});
 
     for (auto h : hidden_ids_)
-      for (auto o : output_ids_)
+      for (auto o : io_ids_.out)
         at_grow(wo_, h, o) = db.get_output_strengh({.from = h, .to = o});
   }
 
   weights_t feed_forward() {
     for (auto h : std::views::iota(0u, hidden_ids_.size())) {
       auto sum = 0.0;
-      for (auto i : std::views::iota(0u, input_ids_.size()))
+      for (auto i : std::views::iota(0u, io_ids_.in.size()))
         sum += ai_[i] * wi_[i][h];
       ah_[h] = std::tanh(sum);
     }
 
-    for (auto o : std::views::iota(0u, output_ids_.size())) {
+    for (auto o : std::views::iota(0u, io_ids_.out.size())) {
       auto sum = 0.0;
       for (auto h : std::views::iota(0u, hidden_ids_.size()))
         sum += ah_[h] * wo_[h][o];
@@ -183,8 +207,8 @@ class query_t {
   void back_propagate(weights_t const& targets, double n = 0.5) {
     // calculate errors for output
     weights_t output_deltas;
-    init_weights(output_deltas, output_ids_.size());
-    for (auto o : std::views::iota(0u, output_ids_.size()))
+    init_weights(output_deltas, io_ids_.out.size());
+    for (auto o : std::views::iota(0u, io_ids_.out.size()))
       output_deltas[o] = dtanh(ao_[o]) * (targets[o] - ao_[o]);
 
     // calculate errors for hiddend layer
@@ -192,30 +216,30 @@ class query_t {
     init_weights(hidden_deltas, hidden_ids_.size());
     for (auto h : std::views::iota(0u, hidden_ids_.size())) {
       auto error = 0.0;
-      for (auto o : std::views::iota(0u, output_ids_.size()))
+      for (auto o : std::views::iota(0u, io_ids_.out.size()))
         error += output_deltas[o] * wo_[h][o];
       hidden_deltas[h] = dtanh(ah_[h]) * error;
     }
 
     // update output weights
     for (auto h : std::views::iota(0u, hidden_ids_.size()))
-      for (auto o : std::views::iota(0u, output_ids_.size()))
+      for (auto o : std::views::iota(0u, io_ids_.out.size()))
         wo_[h][o] += output_deltas[o] * ah_[h] * n;
 
     // update input weights
-    for (auto i : std::views::iota(0u, input_ids_.size()))
+    for (auto i : std::views::iota(0u, io_ids_.in.size()))
       for (auto h : std::views::iota(0u, hidden_ids_.size()))
         wi_[i][h] += hidden_deltas[h] * ai_[i] * n;
   }
 
   void update(data_base_t& db) {
-    for (auto i : std::views::iota(0u, input_ids_.size()))
+    for (auto i : std::views::iota(0u, io_ids_.in.size()))
       for (auto h : std::views::iota(0u, hidden_ids_.size()))
-        db.set_input_strengh({.from = input_ids_[i], .to = hidden_ids_[h]},
+        db.set_input_strengh({.from = io_ids_.in[i], .to = hidden_ids_[h]},
                              wi_[i][h]);
     for (auto h : std::views::iota(0u, hidden_ids_.size()))
-      for (auto o : std::views::iota(0u, output_ids_.size()))
-        db.set_output_strengh({.from = hidden_ids_[h], .to = output_ids_[o]},
+      for (auto o : std::views::iota(0u, io_ids_.out.size()))
+        db.set_output_strengh({.from = hidden_ids_[h], .to = io_ids_.out[o]},
                               wo_[h][o]);
   }
 };
@@ -225,12 +249,11 @@ inline std::size_t index_of(auto const& vector, auto value) {
   return vector.begin() - found;
 }
 
-void train(data_base_t& db, ids_t const& input_ids, ids_t const& output_ids,
-           std::size_t answer_id) {
-  query_t query{db, input_ids, output_ids};
+void train(data_base_t& db, io_ids_t const& io_ids, std::size_t answer_id) {
+  query_t query{db, io_ids};
   query.feed_forward();
-  weights_t targets = init_weights(output_ids.size(), 0.0);
-  targets[index_of(output_ids, answer_id)] = 1.0;
+  weights_t targets = init_weights(io_ids.out.size(), 0.0);
+  targets[index_of(io_ids.out, answer_id)] = 1.0;
   query.back_propagate(targets);
   query.update(db);
 }
