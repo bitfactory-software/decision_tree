@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
-#include <iostream>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -60,6 +59,15 @@ class data_base_t {
     return {};
   }
 
+  static std::optional<std::string> get_io_token(io_nodes_t const& signals,
+                                                 std::size_t id) {
+    if (auto found = std::ranges::find_if(
+            signals, [&](auto const& x) { return x.second == id; });
+        found != signals.end())
+      return found->first;
+    return {};
+  }
+
  public:
   data_base_t& add_in(in_signals_t const& in) {
     add_to(input_nodes_, in);
@@ -84,6 +92,13 @@ class data_base_t {
   std::optional<std::size_t> get_out_id(out_signal_t const& token) {
     return get_io_id(output_nodes_, token);
   }
+  std::optional<in_signal_t> get_in_token(std::size_t id) {
+    return get_io_token(input_nodes_, id);
+  }
+  std::optional<out_signal_t> get_out_token(std::size_t id) {
+    return get_io_token(output_nodes_, id);
+  }
+
   io_ids_t get_io_ids(in_signals_t const& in_signals,
                       out_signals_t const& out_signals) {
     return io_ids_t{
@@ -171,6 +186,14 @@ inline double at_safe(std::vector<weights_t> const& w, std::size_t i,
   return w[i][j];
 }
 
+inline auto dtanh(double y) { return 1.0 - y * y; }
+inline auto sigmod(weights_t weights) {
+  double denom = 0.0f;
+  for (auto& weight : weights) denom += weight = std::exp(weight);
+  for (auto& weight : weights) weight /= denom;
+  return weights;
+}
+
 class query_t {
   weights_t ai_, ah_, ao_;
   std::vector<weights_t> wi_, wo_;
@@ -182,8 +205,6 @@ class query_t {
     init_weights(ah_, hidden_ids_.size());
     init_weights(ao_, io_ids_.out.size());
   }
-
-  auto dtanh(double y) { return 1.0 - y * y; }
 
  public:
   query_t(data_base_t const& db, io_ids_t const& io_ids) {
