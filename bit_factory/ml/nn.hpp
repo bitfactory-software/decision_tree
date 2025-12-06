@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -10,8 +11,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <cassert>
-
 
 namespace bit_factory::ml::nn {
 
@@ -19,10 +18,9 @@ struct edge_t {
   std::size_t from = 0, to = 0;
   friend auto operator<=>(edge_t const&, edge_t const&) = default;
 };
-
+using edge_map_t = std::map<edge_t, double>;
 using hidden_nodes_t = std::map<std::string, std::size_t>;
 using io_nodes_t = std::map<std::string, std::size_t>;
-using edge_map_t = std::map<edge_t, double>;
 using weights_t = std::vector<double>;
 using ids_t = std::vector<std::size_t>;
 using in_signal_t = std::string;
@@ -72,12 +70,13 @@ class data_base_t {
     return *this;
   }
 
-  auto get_in_signals() const{
-      return input_nodes_ | std::views::keys;
-  }
-  auto get_out_signals() const{
-      return output_nodes_ | std::views::keys;
-  }
+  auto get_in_signals() const { return input_nodes_ | std::views::keys; }
+  auto get_out_signals() const { return output_nodes_ | std::views::keys; }
+  hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
+  io_nodes_t const& input_nodes() const { return input_nodes_; }
+  io_nodes_t const& output_nodes() const { return output_nodes_; }
+  edge_map_t const& input_edges() const { return input_edges_; }
+  edge_map_t const& output_edges() const { return output_edges_; }
 
   std::optional<std::size_t> get_in_id(in_signal_t const& token) {
     return get_io_id(input_nodes_, token);
@@ -100,10 +99,6 @@ class data_base_t {
                                 return *get_out_id(signal);
                               })}};
   }
-
-  edge_map_t const& input_edges() const { return input_edges_; }
-  edge_map_t const& output_edges() const { return output_edges_; }
-  hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
 
   double get_input_strengh(edge_t edge) const {
     return get_strengh(input_edges_, edge, -0.2);
