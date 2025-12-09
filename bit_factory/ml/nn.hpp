@@ -80,39 +80,46 @@ class data_base_t {
 
   auto get_in_signals() const { return input_nodes_ | std::views::keys; }
   auto get_out_signals() const { return output_nodes_ | std::views::keys; }
+  auto get_in_ids() const { return input_nodes_ | std::views::values; }
+  auto get_out_ids() const { return output_nodes_ | std::views::values; }
   hidden_nodes_t const& hidden_nodes() const { return hidden_nodes_; }
   io_nodes_t const& input_nodes() const { return input_nodes_; }
   io_nodes_t const& output_nodes() const { return output_nodes_; }
   edge_map_t const& input_edges() const { return input_edges_; }
   edge_map_t const& output_edges() const { return output_edges_; }
 
-  std::optional<std::size_t> get_in_id(in_signal_t const& token) {
+  std::optional<std::size_t> get_in_id(in_signal_t const& token) const {
     return get_io_id(input_nodes_, token);
   }
-  std::optional<std::size_t> get_out_id(out_signal_t const& token) {
+  std::optional<std::size_t> get_out_id(out_signal_t const& token) const {
     return get_io_id(output_nodes_, token);
   }
-  std::optional<in_signal_t> get_in_token(std::size_t id) {
+  std::optional<in_signal_t> get_in_token(std::size_t id) const {
     return get_io_token(input_nodes_, id);
   }
-  std::optional<out_signal_t> get_out_token(std::size_t id) {
+  std::optional<out_signal_t> get_out_token(std::size_t id) const {
     return get_io_token(output_nodes_, id);
   }
 
-  io_ids_t get_io_ids(in_signals_t const& in_signals,
-                      out_signals_t const& out_signals) {
-    return io_ids_t{
-        .in = {std::from_range,
-               in_signals | std::views::transform(
-                                [&](in_signal_t const& signal) -> std::size_t {
-                                  return *get_in_id(signal);
-                                })},
-        .out = {
-            std::from_range,
+  ids_t get_in_ids(in_signals_t const& in_signals) const {
+    return {std::from_range,
+            in_signals | std::views::transform(
+                             [&](in_signal_t const& signal) -> std::size_t {
+                               return *get_in_id(signal);
+                             })};
+  }
+  ids_t get_out_ids(in_signals_t const& out_signals) const {
+    return {std::from_range,
             out_signals | std::views::transform(
                               [&](out_signal_t const& signal) -> std::size_t {
                                 return *get_out_id(signal);
-                              })}};
+                              })};
+  }
+
+  io_ids_t get_io_ids(in_signals_t const& in_signals,
+                      out_signals_t const& out_signals) const {
+    return io_ids_t{.in = get_in_ids(in_signals),
+                    .out = get_out_ids(out_signals)};
   }
 
   double get_input_strengh(edge_t edge) const {
@@ -129,13 +136,11 @@ class data_base_t {
     set_strengh(output_edges_, edge, weight);
   }
 
-  void generate_hidden_node(ids_t input_ids, ids_t const& output_ids) {
-    std::ranges::sort(input_ids);
-    auto id = std::format("{}", input_ids);
-    if (auto found = hidden_nodes_.find(id); found != hidden_nodes_.end())
-      return;
+  void generate_hidden_node_with_net(std::string const& hidden_token,
+                                     auto const& input_ids,
+                                     auto const& output_ids) {
     auto hidden_id = hidden_nodes_.size();
-    hidden_nodes_[id] = hidden_id;
+    hidden_nodes_[hidden_token] = hidden_id;
     for (auto input_id : input_ids)
       set_strengh(input_edges_, edge_t{.from = input_id, .to = hidden_id},
                   1.0 / static_cast<double>(input_ids.size()));
@@ -143,8 +148,23 @@ class data_base_t {
       set_strengh(output_edges_, edge_t{.from = hidden_id, .to = output_id},
                   0.1);
   }
+
+  // assumes, all in- and output nodes are already here!
+  void generate_hidden_node(ids_t input_ids, ids_t const& output_ids) {
+    std::ranges::sort(input_ids);
+    auto id = std::format("{}", input_ids);
+    if (auto found = hidden_nodes_.find(id); found != hidden_nodes_.end())
+      return;
+    generate_hidden_node_with_net(id, input_ids, output_ids);
+  }
   void generate_hidden_node(io_ids_t const& io_ids) {
     generate_hidden_node(io_ids.in, io_ids.out);
+  }
+
+  void generate_hidden_node_net() {
+    for (auto const& in_node : input_nodes_)
+      generate_hidden_node_with_net(std::format("{}", in_node.second),
+                                    get_in_ids(), get_out_ids());
   }
 
   ids_t get_hidden_ids(io_ids_t const& io_ids) const {
@@ -187,12 +207,6 @@ inline double at_safe(std::vector<weights_t> const& w, std::size_t i,
 }
 
 inline auto dtanh(double y) { return 1.0 - y * y; }
-inline auto sigmod(weights_t weights) {
-  double denom = 0.0f;
-  for (auto& weight : weights) denom += weight = std::exp(weight);
-  for (auto& weight : weights) weight /= denom;
-  return weights;
-}
 
 class query_t {
   weights_t ai_, ah_, ao_;
@@ -213,13 +227,13 @@ class query_t {
 
     init_all_weights();
 
-    for (auto i : io_ids_.in)
-      for (auto h : hidden_ids_)
-        at_grow(wi_, i, h) = db.get_input_strengh({.from = i, .to = h});
+    for (auto i : std::views::iota(0u, io_ids_.in.size()))
+      for (auto h : std::views::iota(0u, hidden_ids_.size()))
+        at_grow(wi_, i, h) = db.get_input_strengh({.from = io_ids_.in[i], .to = hidden_ids_[h]});
 
-    for (auto h : hidden_ids_)
-      for (auto o : io_ids_.out)
-        at_grow(wo_, h, o) = db.get_output_strengh({.from = h, .to = o});
+    for (auto h : std::views::iota(0u, hidden_ids_.size()))
+      for (auto o : std::views::iota(0u, io_ids_.out.size()))
+        at_grow(wo_, h, o) = db.get_output_strengh({.from = hidden_ids_[h], .to = io_ids_.out[o]});
   }
 
   weights_t feed_forward() {
