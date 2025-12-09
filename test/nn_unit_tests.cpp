@@ -13,7 +13,7 @@ using std::operator""sv;
 
 TEST_CASE("nn1") {
   nn::data_base_t db;
-  db.add_in({"World", "Bank"});
+  db.add_in({"World", "Bank", "River"});
   db.add_out({"WorldBank", "River", "Earth"});
   CHECK(!db.get_in_id("WorldBank"));
   CHECK(*db.get_in_id("World") == 0);
@@ -41,12 +41,41 @@ TEST_CASE("nn1") {
   for (auto v : prediction_untrained) CHECK_THAT(v, WithinAbs(0.076, 0.01));
   auto io_ids =
       db.get_io_ids({"Bank", "World"}, {"WorldBank", "River", "Earth"});
+  db.generate_hidden_node(io_ids);
   train(db, io_ids, *db.get_out_id("WorldBank"));
   auto prediction_trained = nn::query_t{db, io_ids}.feed_forward();
   std::println("{}", prediction_trained);
   CHECK_THAT(prediction_trained[0], WithinAbs(0.335, 0.001));
   CHECK_THAT(prediction_trained[1], WithinAbs(0.055, 0.001));
   CHECK_THAT(prediction_trained[2], WithinAbs(0.055, 0.001));
+
+  for([[maybe_unused]] auto i : std::views::iota(0, 30))
+  {
+    train(db, db.get_io_ids({"Bank", "World"}, {"WorldBank", "River", "Earth"}), *db.get_out_id("WorldBank"));
+    train(db, db.get_io_ids({"Bank", "River"}, {"WorldBank", "River", "Earth"}), *db.get_out_id("River"));
+    train(db, db.get_io_ids({"World"}, {"WorldBank", "River", "Earth"}), *db.get_out_id("Earth"));
+  }
+  {
+      auto prediction = nn::query_t{db, db.get_io_ids({"Bank", "World"}, {"WorldBank", "River", "Earth"})}.feed_forward();
+      std::println("{}", prediction_trained);
+      CHECK_THAT(prediction[0], WithinAbs(0.861466212, 0.001));
+      CHECK_THAT(prediction[1], WithinAbs(0.011, 0.001));
+      CHECK_THAT(prediction[2], WithinAbs(0.0161036872, 0.001));
+  }
+  {
+      auto prediction = nn::query_t{db, db.get_io_ids({"Bank", "River"}, {"WorldBank", "River", "Earth"})}.feed_forward();
+      std::println("{}", prediction_trained);
+      CHECK_THAT(prediction[0], WithinAbs(-0.03180753027, 0.001));
+      CHECK_THAT(prediction[1], WithinAbs(0.883, 0.001));
+      CHECK_THAT(prediction[2], WithinAbs(0.006, 0.001));
+  }
+  {
+      auto prediction = nn::query_t{db, db.get_io_ids({"Bank"}, {"WorldBank", "River", "Earth"})}.feed_forward();
+      std::println("{}", prediction_trained);
+      CHECK_THAT(prediction[0], WithinAbs(0.865, 0.001));
+      CHECK_THAT(prediction[1], WithinAbs(-0.0005847, 0.001));
+      CHECK_THAT(prediction[2], WithinAbs(-0.851868080959, 0.001));
+  }
 }
 
 namespace {
@@ -76,7 +105,7 @@ void trace_io_nodes(std::string_view label, auto const& nodes) {
 void trace_edges(std::string_view label, auto const& edges) {
   std::print("+++{}:\n", label);
   for (auto const& edge : edges)
-    std::print("\t{} -> {} ({})\n", edge.first.from, edge.first.to,
+    std::print("\t{} -> {} ({:10f})\n", edge.first.from, edge.first.to,
                edge.second);
   std::print("---\n");
 }
@@ -97,18 +126,55 @@ void predict(nn::data_base_t& db, auto observation, int length = 9) {
   // trace_nn(db, std::string_view(observation));
   nn::out_signals_t out_signals{std::from_range, db.get_out_signals()};
   auto io_ids = db.get_io_ids(observation_signals, out_signals);
-  auto pure_predictions = nn::query_t{db, io_ids}.feed_forward();
-  auto predictions = nn::sigmod(pure_predictions);
-  std::println("prediction for {} sum = {}", std::string_view{observation},
-               std::ranges::fold_left(pure_predictions, 0.0, std::plus<>{}));
+  auto predictions = nn::query_t{db, io_ids}.feed_forward();
+  std::println("prediction for {}", std::string_view{observation});
   for (auto [i, prediction] : std::views::enumerate(predictions))
-    std::println("\t{}, id =[{}]: {}, {}", *db.get_out_token(io_ids.out[i]),
-                 io_ids.out[i], prediction, pure_predictions[i]);
+    std::println("\t{}, id =[{}]: {}", *db.get_out_token(io_ids.out[i]),
+                 io_ids.out[i], prediction);
 }
+
+namespace
+{
+  constexpr auto nl{"\n"sv};
+}
+
+//void generate_db(nn::data_base_t& db, auto const& data, int length = 9) {
+//  for (auto line : std::views::split(data, nl)) {
+//    auto [in_signals, out_signals] = parse_signals(line, length);
+//    db.add_in(in_signals);
+//    db.add_out(out_signals);
+//    auto train_ids = db.get_io_ids(
+//        in_signals, nn::out_signals_t{std::from_range, db.get_out_signals()});
+//  }
+//  db.generate_hidden_node_net();
+//}
+//
+//void train_db(nn::data_base_t& db, auto const& data, int length = 9) {
+//  for (auto line : std::views::split(data, nl)) {
+//    auto [in_signals, out_signals] = parse_signals(line, length);
+//    db.add_in(in_signals);
+//    db.add_out(out_signals);
+//    auto train_ids = db.get_io_ids(
+//        in_signals, nn::out_signals_t{std::from_range, db.get_out_signals()});
+//    nn::train(db, train_ids, *db.get_out_id(out_signals.front()));
+//    //if (log) trace_nn(db, std::string_view(line));
+//
+//    //if (!log) continue;
+//    //auto prediction_trained = nn::query_t{db, train_ids}.feed_forward();
+//    //std::println("prediction: {}",
+//    //             std::views::zip(prediction_trained, train_ids.out));
+//  }
+//}
+//
+//void generate_and_train_db(std::string_view name, nn::data_base_t& db, auto const& data, bool log = false,
+//              int length = 9) {
+//    generate_db(db, data, length);
+//    train_db(db, data, length);
+//    if (log) trace_nn(db, std::string_view(name));
+//}
 
 void train_db(nn::data_base_t& db, auto const& data, bool log = false,
               int length = 9) {
-  constexpr auto nl{"\n"sv};
   for (auto line : std::views::split(data, nl)) {
     auto [in_signals, out_signals] = parse_signals(line, length);
     db.add_in(in_signals);
@@ -127,30 +193,31 @@ void train_db(nn::data_base_t& db, auto const& data, bool log = false,
 
 }  // namespace
 
-#include "nn2_test_data.hpp"
-TEST_CASE("nn2") {
-  nn::data_base_t db;
-  train_db(db, data_nn2);
-  predict(db, R"(|   |D3 |   |D3 |   |   |   |D3 |)"sv);
-  predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
-  predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
-  predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
-  predict(db, R"(|   |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
-  predict(db, R"(|D3 |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
-}
 
-#include "nn3_test_data.hpp"
-TEST_CASE("nn3") {
-  nn::data_base_t db;
-  train_db(db, data_nn3);
-  predict(db, R"(|   |   |D3 |   |   |LD6|   |   |)"sv);
-  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|   |)"sv);
-  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|LD6|)"sv);
-  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|N1 |)"sv);
-  predict(db, R"(|   |   |D3 |   |   |   |N1 |N1 |)"sv);
-  predict(db, R"(|N1 |   |   |   |D3 |L6D|   |   |)"sv);
-  predict(db, R"(|   |N1 |N1 |   |   |D3 |   |   |)"sv);
-}
+//#include "nn2_test_data.hpp"
+//TEST_CASE("nn2") {
+//  nn::data_base_t db;
+//  generate_and_train_db(db, data_nn2);
+//  predict(db, R"(|   |D3 |   |D3 |   |   |   |D3 |)"sv);
+//  predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
+//  predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
+//  predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
+//  predict(db, R"(|   |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
+//  predict(db, R"(|D3 |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
+//}
+//
+//#include "nn3_test_data.hpp"
+//TEST_CASE("nn3") {
+//  nn::data_base_t db;
+//  generate_and_train_db(db, data_nn3);
+//  predict(db, R"(|   |   |D3 |   |   |LD6|   |   |)"sv);
+//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|   |)"sv);
+//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|LD6|)"sv);
+//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|N1 |)"sv);
+//  predict(db, R"(|   |   |D3 |   |   |   |N1 |N1 |)"sv);
+//  predict(db, R"(|N1 |   |   |   |D3 |L6D|   |   |)"sv);
+//  predict(db, R"(|   |N1 |N1 |   |   |D3 |   |   |)"sv);
+//}
 
 TEST_CASE("parse_signals1") {
   auto [in, out] = parse_signals(R"(|N1 |   |LD6|)"sv, 3);
@@ -168,41 +235,56 @@ TEST_CASE("parse_signals2") {
   CHECK(out.size() == 0);
 }
 
-TEST_CASE("nnX1") {
+TEST_CASE("nnYa2") {
   nn::data_base_t db;
-  constexpr auto data{R"(|N1 |   |LD6|)"sv};
-  train_db(db, data, true, 3);
-  predict(db, R"(|N1 |   |)"sv, 3);  // -> "LD6"
+  constexpr auto data{
+      R"(|A  |X  |
+|B  |Y  |)"sv};
+  //generate_and_train_db("nnYa2", db, data, true, 2);
+  train_db(db, data, true, 2);
+  predict(db, R"(|A  |)"sv, 2);  // -> "X  "
+  predict(db, R"(|B  |)"sv, 2);  // -> "Y  "
 }
-TEST_CASE("nnX2") {
+TEST_CASE("nnYb") {
   nn::data_base_t db;
-  constexpr auto data{R"(|   |   |RuB|)"sv};
-  train_db(db, data, true, 3);
-  predict(db, R"(|   |   |)"sv, 3);  // -> "LD6"
+  constexpr auto data{
+      R"(|B  |Y  |
+|A  |X  |)"sv};
+  //generate_and_train_db("nnYb", db, data, true, 2);
+  train_db(db, data, true, 2);
+  predict(db, R"(|A  |)"sv, 2);  // -> "X  "
+  predict(db, R"(|B  |)"sv, 2);  // -> "Y  "
 }
 TEST_CASE("nnX3") {
   nn::data_base_t db;
   constexpr auto data{
-      R"(|N1 |   |LD6|
-|   |   |RuB|)"sv};
+      R"(|A  |   |X  |
+|   |   |Y  |)"sv};
+ // generate_and_train_db("nnX3", db, data, true, 3);
   train_db(db, data, true, 3);
-  predict(db, R"(|N1 |   |)"sv, 3);  // -> "LD6"
-  predict(db, R"(|   |   |)"sv, 3);  // -> "RuB"
+  predict(db, R"(|A  |   |)"sv, 3);  // -> "X  "
+  predict(db, R"(|   |   |)"sv, 3);  // -> "Y  "
+  predict(db, R"(|   |A  |)"sv, 3);  // -> "?  "
+  predict(db, R"(|A  |A  |)"sv, 3);  // -> "?  "
 }
 TEST_CASE("nnX4") {
   nn::data_base_t db;
   constexpr auto data{
-      R"(|N1 |   |LD6|
-|   |   |RuB|)"sv};
+      R"(|   |   |C  |
+|A  |   |B  |)"sv};
+//  generate_and_train_db("nnX4", db, data, true, 3);
   train_db(db, data, true, 3);
-  predict(db, R"(|   |   |)"sv, 3);  // -> "RuB"
-  predict(db, R"(|N1 |   |)"sv, 3);  // -> "LD6"
+  predict(db, R"(|A  |   |)"sv, 3);  // -> "X  "
+  predict(db, R"(|   |   |)"sv, 3);  // -> "Y  "
+  predict(db, R"(|   |A  |)"sv, 3);  // -> "?  "
+  predict(db, R"(|A  |A  |)"sv, 3);  // -> "?  "
 }
 TEST_CASE("nn3b") {
   nn::data_base_t db;
   constexpr auto data_nn3a{
       R"(|N1 |   |LD6|
 |   |   |RuB|)"sv};
+//  generate_and_train_db("nn3b", db, data_nn3a, true, 3);
   train_db(db, data_nn3a, true, 3);
   predict(db, R"(|N1 |   |)"sv, 3);  // -> "LD6"
   predict(db, R"(|N1 |RuB|)"sv, 3);  // -> "?"
