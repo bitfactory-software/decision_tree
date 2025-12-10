@@ -22,7 +22,11 @@ Checks: "*,
         -readability-braces-around-statements,
         -cert-err58-cpp,
         -readability-identifier-length,
-        -misc-include-cleaner
+        -misc-include-cleaner,
+        -readability-isolate-declaration,
+        -bugprone-reserved-identifier,
+        -cert-dcl37-c,cert-dcl51-cpp,
+        -readability-redundant-string-init
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
