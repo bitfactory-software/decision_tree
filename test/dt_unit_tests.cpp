@@ -6,12 +6,12 @@
 TEST_CASE("build_tree1") {
   using namespace bit_factory;
   using decision_tree =
-      ml::decision_tree<std::string, std::string, std::string, std::string>;
+      ml::decision_tree<ml::array_sheet<std::string, 3>>;
   const decision_tree::rows_t samples{
-      {"", "D", "", "N"},
-      {"N", "", "", "N"},
-      {"D", "", "D", "D"},
-      {"", "", "", ""},
+      {{"", "D", ""}, "N"},
+      {{"N", "", ""}, "N"},
+      {{"D", "", "D"}, "D"},
+      {{"", "", ""}, ""}
   };
 
   auto tree = decision_tree::build_tree(samples);
@@ -37,14 +37,13 @@ F-> 0:?
 TEST_CASE("build_tree2") {
   using namespace bit_factory;
   std::string ___ = "", X = "X", Y = "Y";
-  using decision_tree = ml::decision_tree<
-      std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string >;
+  using decision_tree = ml::decision_tree<ml::array_sheet<std::string, 8>>;
   const decision_tree::rows_t samples{
-      {___, ___, ___, ___, ___, ___, X, ___, Y},
-      {___, ___, ___, ___, ___, Y, ___, ___, Y},
-      {___, ___, ___, ___, ___, ___, X, ___, X},
-      {___, ___, ___, ___, ___, Y, ___, ___, ___},
-      {___, ___, ___, ___, ___, ___, X, ___, ___}};
+      {{___, ___, ___, ___, ___, ___, X, ___}, Y},
+      {{___, ___, ___, ___, ___, Y, ___, ___}, Y},
+      {{___, ___, ___, ___, ___, ___, X, ___}, X},
+      {{___, ___, ___, ___, ___, Y, ___, ___}, ___},
+      {{___, ___, ___, ___, ___, ___, X, ___}, ___}};
 
   auto tree = decision_tree::build_tree(samples);
   CHECK(to_string(tree) ==

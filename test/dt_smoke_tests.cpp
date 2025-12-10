@@ -10,11 +10,11 @@
 #include <tuple>
 
 using namespace Catch::Matchers;
-
+using namespace bit_factory;
 namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
-using decision_tree = bit_factory::ml::decision_tree<std::string, std::string,
-                                                     bool, int, std::string>;
+using decision_tree = ml::decision_tree<ml::tulpe_sheet<std::string, std::string,
+                                                     bool, int, std::string>>;
 const decision_tree::rows_t test_data{
     {"Slashdot", "France", true, 19, "None"},
     {"Slashdot", "UK", false, 21, "None"},
@@ -119,7 +119,8 @@ F-> 0:Slashdot?
   CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
   CHECK(decision_tree::to_string(prediction) == "{basic: 4}");
 
-  auto tree_prune_0_1 = decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
+  auto tree_prune_0_1 =
+      decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
   CHECK(to_string(tree_prune_0_1) ==
         R"(0:Google?
 T-> 3:21?

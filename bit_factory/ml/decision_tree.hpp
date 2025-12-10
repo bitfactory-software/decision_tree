@@ -63,21 +63,82 @@ struct remove_last<std::tuple<Args...>> {
 }  // namespace detail
 
 template <typename... Values>
-struct decision_tree {
-  // types
+struct tulpe_sheet {
   using row_t = std::tuple<Values...>;
-  using rows_t = std::vector<row_t>;
-  using rows_set_t = std::set<row_t>;
   inline static constexpr std::size_t column_count = std::tuple_size_v<row_t>;
   inline static constexpr std::size_t predict_column = column_count - 1;
   using predict_t = std::tuple_element_t<predict_column, row_t>;
+  using observation_t =
+      typename detail::remove_last<std::tuple<std::optional<Values>...>>::type;
+  using unique_tuple_t = typename detail::unique<std::tuple<>, Values...>::type;
+  static constexpr const std::size_t observation_size = column_count - 1;
+  template <std::size_t I>
+  using row_column_type = std::tuple_element_t<I, row_t>;
+  template <std::size_t I>
+  using observation_column_type = std::tuple_element_t<I, row_t>;
+
+  template <std::size_t I>
+  static std::optional<row_column_type<I>> get_observation_value(
+      observation_t const& observation) {
+    return std::get<I>(observation);
+  }
+  template <std::size_t I>
+  static auto get_observation_value(row_t const& row) {
+    return std::get<I>(row);
+  }
+  static auto get_predict_value(row_t const& row) {
+    return std::get<column_count - 1>(row);
+  }
+};
+
+template <typename ObservationValue, std::size_t ObservationSize,
+          typename PredictValue = ObservationValue>
+struct array_sheet {
+  using observation_t =
+      std::array<std::optional<ObservationValue>, ObservationSize>;
+  using predict_t = PredictValue;
+  using row_t =
+      std::pair<std::array<ObservationValue, ObservationSize>, PredictValue>;
+  using unique_tuple_t = typename detail::unique<std::tuple<>, ObservationValue,
+                                                 PredictValue>::type;
+  static constexpr const std::size_t observation_size = ObservationSize;
+  template <std::size_t I>
+  using row_column_type = ObservationValue;
+  template <std::size_t I>
+  using observation_column_type = ObservationValue;
+
+  template <std::size_t I>
+  static std::optional<ObservationValue> get_observation_value(
+      observation_t const& observation) {
+    return std::get<I>(observation);
+  }
+  template <std::size_t I>
+  static ObservationValue get_observation_value(row_t const& row) {
+    return std::get<I>(row.first);
+  }
+  static predict_t get_predict_value(row_t const& row) { return row.second; }
+};
+
+template <typename Sheet>
+struct decision_tree {
+  // types
+  using observation_t = typename Sheet::observation_t;
+  using predict_t = typename Sheet::predict_t;
+  using row_t = typename Sheet::row_t;
+  using unique_tuple_t = typename Sheet::unique_tuple_t;
+  static constexpr const std::size_t observation_size = Sheet::observation_size;
+  template <std::size_t I>
+  using row_column_type = typename Sheet::template row_column_type<I>;
+  template <std::size_t I>
+  using observation_column_type =
+      typename Sheet::template observation_column_type<I>;
+
+  using rows_t = std::vector<row_t>;
+  using rows_set_t = std::set<row_t>;
   using result_counts_t = std::map<predict_t, double>;
   using pointer_to_rows_t = std::vector<row_t const*>;
   using split_sets_t = std::array<pointer_to_rows_t, 2>;
-  using observation_t =
-      typename detail::remove_last<std::tuple<std::optional<Values>...>>::type;
   using result_t = typename result_counts_t::value_type;
-  using unique_tuple_t = typename detail::unique<std::tuple<>, Values...>::type;
   using values_variant_t = typename detail::to_variant<unique_tuple_t>::type;
 
   struct print_result {
@@ -154,12 +215,13 @@ struct decision_tree {
     return pointer_to_rows;
   }
 
-  template <std::size_t I, typename V>
-  [[nodiscard]] static constexpr bool splits(auto const& row, V const& value) {
+  template <typename V>
+  [[nodiscard]] static constexpr bool splits(V const& query,
+                                             V const& column_value) {
     if constexpr (std::is_arithmetic_v<V>) {
-      return std::get<I>(row) >= value;
+      return query >= column_value;
     } else {
-      return std::get<I>(row) == value;
+      return query == column_value;
     }
   }
 
@@ -168,7 +230,8 @@ struct decision_tree {
       pointer_to_rows_t const& rows, V const& value) {
     split_sets_t split_sets;
     for (row_t const* row : rows)
-      split_sets[splits<I>(*row, value) ? 0 : 1].push_back(row);
+      split_sets[splits(Sheet::get_observation_value<I>(*row), value) ? 0 : 1]
+          .push_back(row);
     return split_sets;
   }
 
@@ -182,7 +245,7 @@ struct decision_tree {
   [[nodiscard]] static result_counts_t result_counts(
       pointer_to_rows_t const& rows) {
     return result_counts(
-        rows, [](row_t const* row) { return std::get<predict_column>(*row); });
+        rows, [](row_t const* row) { return Sheet::get_predict_value(*row); });
   }
 
   [[nodiscard]] static double result_counts_total(
@@ -219,17 +282,18 @@ struct decision_tree {
   template <std::size_t Column>
   static gain_t find_best_gain(pointer_to_rows_t const& rows, gain_t best_gain,
                                double current_score, auto score_function) {
-    if constexpr (Column < predict_column) {
-      using column_t = std::tuple_element_t<Column, row_t>;
+    if constexpr (Column < observation_size) {
+      using column_t = row_column_type<Column>;
       std::set<column_t> column_values;
-      for (auto const& row : rows) column_values.insert(std::get<Column>(*row));
-      for (const auto& value : column_values) {
+      for (auto const& row : rows)
+        column_values.insert(Sheet::get_observation_value<Column>(*row));
+      for (const column_t& value : column_values) {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
         double p = static_cast<double>(split_sets[0].size()) /
                    static_cast<double>(rows.size());
-        auto possible_gain = current_score -
-                    p * score_function(result_counts(split_sets[0])) -
-                    (1 - p) * score_function(result_counts(split_sets[1]));
+        double possible_gain =
+            current_score - p * score_function(result_counts(split_sets[0])) -
+            (1 - p) * score_function(result_counts(split_sets[1]));
         if (possible_gain > best_gain.value && !split_sets[0].empty() &&
             !split_sets[1].empty())
           best_gain = {possible_gain, {Column, value}, split_sets};
@@ -266,16 +330,25 @@ struct decision_tree {
     return build_tree(rows, &entropy);
   }
 
-  template <std::size_t I>
-  [[nodiscard]] static bool take_true_branch(column_value_t column_value,
+  template <std::size_t I, typename V>
+  [[nodiscard]] static bool take_true_branch(V const& query_value,
+                                             column_value_t const& column_value,
                                              observation_t const& observation) {
-    if constexpr (I < std::tuple_size_v<observation_t>) {
+    if constexpr (I < observation_size) {
       if (column_value.column > I)
-        return take_true_branch<I + 1>(column_value, observation);
-
-      using optional_column_t = std::tuple_element_t<I, observation_t>;
-      using column_t = typename optional_column_t::value_type;
-      return splits<I>(observation, std::get<column_t>(column_value.value));
+        if constexpr (I < observation_size - 1) {
+          return take_true_branch<I + 1>(
+              *Sheet::get_observation_value<I + 1>(observation), column_value,
+              observation);
+        } else {
+          return false;  // should never be reached}
+        }
+      using column_t = observation_column_type<I>;
+      if constexpr (std::same_as<V, column_t>) {
+        return splits(query_value, std::get<column_t>(column_value.value));
+      } else {
+        return false;  // should never be reached}
+      }
     } else {
       return false;  // should never be reached
     }
@@ -286,7 +359,9 @@ struct decision_tree {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
     auto const& children = std::get<children_t>(tree.node_data);
-    if (take_true_branch<0>(tree.column_value, observation))
+    auto query_value = Sheet::get_observation_value<0>(observation);
+    if (!query_value) return {};
+    if (take_true_branch<0>(*query_value, tree.column_value, observation))
       return classify(*children.true_path, observation);
     else
       return classify(*children.false_path, observation);
@@ -326,9 +401,11 @@ struct decision_tree {
         return classify_column_with_missing_data<I + 1>(tree, observation);
 
       auto const& children = std::get<children_t>(tree.node_data);
-      if (!std::get<I>(observation))
+      auto query_value = Sheet::get_observation_value<I>(observation);
+      if (!query_value)
         return combine_children_of_missing_data_node(children, observation);
-      else if (take_true_branch<I>(tree.column_value, observation))
+      else if (take_true_branch<I>(*query_value, tree.column_value,
+                                   observation))
         return classify_with_missing_data(*children.true_path, observation);
       else
         return classify_with_missing_data(*children.false_path, observation);
