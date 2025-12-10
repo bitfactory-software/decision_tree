@@ -227,12 +227,12 @@ struct decision_tree {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
         double p = static_cast<double>(split_sets[0].size()) /
                    static_cast<double>(rows.size());
-        auto gain = current_score -
+        auto possible_gain = current_score -
                     p * score_function(result_counts(split_sets[0])) -
                     (1 - p) * score_function(result_counts(split_sets[1]));
-        if (gain > best_gain.value && !split_sets[0].empty() &&
+        if (possible_gain > best_gain.value && !split_sets[0].empty() &&
             !split_sets[1].empty())
-          best_gain = {gain, {Column, value}, split_sets};
+          best_gain = {possible_gain, {Column, value}, split_sets};
       }
       return find_best_gain<Column + 1>(rows, best_gain, current_score,
                                         score_function);
