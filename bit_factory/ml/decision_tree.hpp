@@ -339,7 +339,7 @@ struct decision_tree {
                                              column_value_t const& column_value,
                                              observation_t const& observation) {
     if constexpr (I < observation_size) {
-      if (column_value.column > I)
+      if (column_value.column > I) {
         if constexpr (I < observation_size - 1) {
           return take_true_branch<I + 1>(
               *get_observation_value<I + 1>(observation), column_value,
@@ -347,6 +347,7 @@ struct decision_tree {
         } else {
           return false;  // should never be reached}
         }
+      }
       using column_t = observation_column_type<I>;
       if constexpr (std::same_as<V, column_t>) {
         return splits(query_value, std::get<column_t>(column_value.value));
