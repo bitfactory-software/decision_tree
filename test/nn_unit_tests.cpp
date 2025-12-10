@@ -194,30 +194,30 @@ void train_db(nn::data_base_t& db, auto const& data, bool log = false,
 }  // namespace
 
 
-//#include "nn2_test_data.hpp"
-//TEST_CASE("nn2") {
-//  nn::data_base_t db;
-//  generate_and_train_db(db, data_nn2);
-//  predict(db, R"(|   |D3 |   |D3 |   |   |   |D3 |)"sv);
-//  predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
-//  predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
-//  predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
-//  predict(db, R"(|   |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
-//  predict(db, R"(|D3 |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
-//}
-//
-//#include "nn3_test_data.hpp"
-//TEST_CASE("nn3") {
-//  nn::data_base_t db;
-//  generate_and_train_db(db, data_nn3);
-//  predict(db, R"(|   |   |D3 |   |   |LD6|   |   |)"sv);
-//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|   |)"sv);
-//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|LD6|)"sv);
-//  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|N1 |)"sv);
-//  predict(db, R"(|   |   |D3 |   |   |   |N1 |N1 |)"sv);
-//  predict(db, R"(|N1 |   |   |   |D3 |L6D|   |   |)"sv);
-//  predict(db, R"(|   |N1 |N1 |   |   |D3 |   |   |)"sv);
-//}
+#include "nn2_test_data.hpp"
+TEST_CASE("nn2") {
+  nn::data_base_t db;
+  train_db(db, data_nn2);
+  predict(db, R"(|   |D3 |   |D3 |   |   |   |D3 |)"sv);
+  predict(db, R"(|   |D3 |   |D3 |   |   |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |   |D3 |   |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |   |D3 |D3 |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|   |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
+  predict(db, R"(|D3 |D3 |D3 |D3 |D3 |D3 |D3 |D3 |)"sv);
+}
+
+#include "nn3_test_data.hpp"
+TEST_CASE("nn3") {
+  nn::data_base_t db;
+  train_db(db, data_nn3);
+  predict(db, R"(|   |   |D3 |   |   |LD6|   |   |)"sv);
+  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|   |)"sv);
+  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|LD6|)"sv);
+  predict(db, R"(|   |   |D3 |   |   |LD6|LD6|N1 |)"sv);
+  predict(db, R"(|   |   |D3 |   |   |   |N1 |N1 |)"sv);
+  predict(db, R"(|N1 |   |   |   |D3 |L6D|   |   |)"sv);
+  predict(db, R"(|   |N1 |N1 |   |   |D3 |   |   |)"sv);
+}
 
 TEST_CASE("parse_signals1") {
   auto [in, out] = parse_signals(R"(|N1 |   |LD6|)"sv, 3);
