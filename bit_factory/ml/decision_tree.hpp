@@ -134,7 +134,7 @@ struct decision_tree {
       typename Sheet::template observation_column_type<I>;
   template <std::size_t I>
   static auto get_observation_value(auto const& observation) {
-    return *Sheet::template get_observation_value<I + 1>(observation);
+    return Sheet::template get_observation_value<I>(observation);
   }
 
   using rows_t = std::vector<row_t>;
