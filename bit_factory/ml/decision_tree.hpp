@@ -132,6 +132,10 @@ struct decision_tree {
   template <std::size_t I>
   using observation_column_type =
       typename Sheet::template observation_column_type<I>;
+  template <std::size_t I>
+  static auto get_observation_value(auto const& observation) {
+    return *Sheet::template get_observation_value<I + 1>(observation);
+  }
 
   using rows_t = std::vector<row_t>;
   using rows_set_t = std::set<row_t>;
@@ -230,7 +234,7 @@ struct decision_tree {
       pointer_to_rows_t const& rows, V const& value) {
     split_sets_t split_sets;
     for (row_t const* row : rows)
-      split_sets[splits(Sheet::get_observation_value<I>(*row), value) ? 0 : 1]
+      split_sets[splits(get_observation_value<I>(*row), value) ? 0 : 1]
           .push_back(row);
     return split_sets;
   }
@@ -286,7 +290,7 @@ struct decision_tree {
       using column_t = row_column_type<Column>;
       std::set<column_t> column_values;
       for (auto const& row : rows)
-        column_values.insert(Sheet::get_observation_value<Column>(*row));
+        column_values.insert(get_observation_value<Column>(*row));
       for (const column_t& value : column_values) {
         auto split_sets = split_table_by_column_value<Column>(rows, value);
         double p = static_cast<double>(split_sets[0].size()) /
@@ -338,7 +342,7 @@ struct decision_tree {
       if (column_value.column > I)
         if constexpr (I < observation_size - 1) {
           return take_true_branch<I + 1>(
-              *Sheet::get_observation_value<I + 1>(observation), column_value,
+              *get_observation_value<I + 1>(observation), column_value,
               observation);
         } else {
           return false;  // should never be reached}
@@ -359,7 +363,7 @@ struct decision_tree {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
     auto const& children = std::get<children_t>(tree.node_data);
-    auto query_value = Sheet::get_observation_value<0>(observation);
+    auto query_value = get_observation_value<0>(observation);
     if (!query_value) return {};
     if (take_true_branch<0>(*query_value, tree.column_value, observation))
       return classify(*children.true_path, observation);
@@ -401,7 +405,7 @@ struct decision_tree {
         return classify_column_with_missing_data<I + 1>(tree, observation);
 
       auto const& children = std::get<children_t>(tree.node_data);
-      auto query_value = Sheet::get_observation_value<I>(observation);
+      auto query_value = get_observation_value<I>(observation);
       if (!query_value)
         return combine_children_of_missing_data_node(children, observation);
       else if (take_true_branch<I>(*query_value, tree.column_value,
