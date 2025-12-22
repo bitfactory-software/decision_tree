@@ -199,6 +199,12 @@ struct decision_tree {
   struct tree_t {
     column_value_t column_value;
     node_data_t node_data;
+
+    explicit operator bool() const {
+      if (auto const* children = std::get_if<children_t>(&node_data))
+        return children->true_path && children->false_path;
+      return true;
+    }
   };
 
   struct print_node {
@@ -390,7 +396,7 @@ struct decision_tree {
       return *result;
     auto const& children = std::get<children_t>(tree.node_data);
     auto query_value = get_observation_value<0>(observation);
-    if (!query_value) return {};
+    if (!query_value || !children.true_path || !children.false_path) return {};
     if (take_true_branch<0>(*query_value, tree.column_value, observation))
       return classify(*children.true_path, observation);
     else
