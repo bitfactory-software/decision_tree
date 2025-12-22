@@ -62,8 +62,10 @@ struct remove_last<std::tuple<Args...>> {
 
 }  // namespace detail
 
-template <typename... Values>
+template <auto Labels, typename... Values>
 struct tulpe_sheet {
+  //static_assert(
+  //    std::same_as<decltype(Labels), const char * [sizeof...(Values)]>);
   using row_t = std::tuple<Values...>;
   inline static constexpr std::size_t column_count = std::tuple_size_v<row_t>;
   inline static constexpr std::size_t predict_column = column_count - 1;
@@ -89,6 +91,9 @@ struct tulpe_sheet {
   static auto get_predict_value(row_t const& row) {
     return std::get<column_count - 1>(row);
   }
+
+  static std::string get_label(std::size_t index) {
+    return Labels[index]; }
 };
 
 template <typename ObservationValue, std::size_t ObservationSize,
@@ -117,6 +122,11 @@ struct array_sheet {
     return std::get<I>(row.first);
   }
   static predict_t get_predict_value(row_t const& row) { return row.second; }
+
+  static std::string get_label(std::size_t index) {
+    if (index < observation_size) return "x[" + std::to_string(index) + "]";
+    return "y";
+  }
 };
 
 template <typename Sheet>
@@ -171,7 +181,7 @@ struct decision_tree {
     values_variant_t value;
     friend std::ostream& operator<<(std::ostream& os,
                                     column_value_t const& column_value) {
-      os << column_value.column << ":";
+      os << Sheet::get_label(column_value.column) << ":";
       std::visit([&](const auto v) { os << v; }, column_value.value);
       return os << "?\n";
     }

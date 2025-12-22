@@ -13,7 +13,9 @@ using namespace Catch::Matchers;
 using namespace bit_factory;
 namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
-using decision_tree = ml::decision_tree<ml::tulpe_sheet<std::string, std::string,
+constexpr static inline const char* labels[5] {
+    "referrer", "location", "read FAQ", "pages viewed", "service choosen"};
+using decision_tree = ml::decision_tree<ml::tulpe_sheet<labels, std::string, std::string,
                                                      bool, int, std::string>>;
 const decision_tree::rows_t test_data{
     {"Slashdot", "France", true, 19, "None"},
@@ -95,17 +97,17 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
 
   auto tree = decision_tree::build_tree(test_data);
   CHECK(to_string(tree) ==
-        R"(0:Google?
-T-> 3:21?
+        R"(referrer:Google?
+T-> pages viewed:21?
    T-> {Premium: 3}
-   F-> 2:1?
+   F-> read FAQ:1?
       T-> {basic: 1}
       F-> {None: 1}
-F-> 0:Slashdot?
+F-> referrer:Slashdot?
    T-> {None: 3}
-   F-> 2:1?
+   F-> read FAQ:1?
       T-> {basic: 4}
-      F-> 3:21?
+      F-> pages viewed:21?
          T-> {basic: 1}
          F-> {None: 3}
 )");
@@ -122,26 +124,26 @@ F-> 0:Slashdot?
   auto tree_prune_0_1 =
       decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
   CHECK(to_string(tree_prune_0_1) ==
-        R"(0:Google?
-T-> 3:21?
+        R"(referrer:Google?
+T-> pages viewed:21?
    T-> {Premium: 3}
-   F-> 2:1?
+   F-> read FAQ:1?
       T-> {basic: 1}
       F-> {None: 1}
-F-> 0:Slashdot?
+F-> referrer:Slashdot?
    T-> {None: 3}
-   F-> 2:1?
+   F-> read FAQ:1?
       T-> {basic: 4}
-      F-> 3:21?
+      F-> pages viewed:21?
          T-> {basic: 1}
          F-> {None: 3}
 )");
   auto tree_prune_1_0 = decision_tree::prune(tree_prune_0_1, 1.0);
   CHECK(to_string(tree_prune_1_0) ==
-        R"(0:Google?
-T-> 3:21?
+        R"(referrer:Google?
+T-> pages viewed:21?
    T-> {Premium: 3}
-   F-> 2:1?
+   F-> read FAQ:1?
       T-> {basic: 1}
       F-> {None: 1}
 F-> {None: 6, basic: 5}
