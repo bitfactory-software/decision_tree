@@ -72,7 +72,7 @@ TEST_CASE("classify empty node") {
     using namespace bit_factory;
     using decision_tree = ml::decision_tree<ml::array_sheet<std::string, 8>>;
     const decision_tree::tree_t tree{};
-    decision_tree::observation_t observation = { "", "", "", "", "", "", "Y", ""};
+    const decision_tree::observation_t observation = { "", "", "", "", "", "", "Y", ""};
     auto result = decision_tree::to_string(decision_tree::classify(tree, observation));
     CHECK(result == "{}");
     CHECK(!tree);
