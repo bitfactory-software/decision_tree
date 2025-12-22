@@ -131,6 +131,7 @@ struct array_sheet {
 template <typename Sheet>
 struct decision_tree {
   // types
+  using sheet_t = Sheet;
   using observation_t = typename Sheet::observation_t;
   using predict_t = typename Sheet::predict_t;
   using row_t = typename Sheet::row_t;
