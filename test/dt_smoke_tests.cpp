@@ -13,10 +13,11 @@ using namespace Catch::Matchers;
 using namespace bit_factory;
 namespace {
 // referrer, loaction, read FAQ, pages viewed, service choosen
-constexpr static inline const char* labels[5] {
+constexpr inline const char* labels[5]{ // NOLINT
     "referrer", "location", "read FAQ", "pages viewed", "service choosen"};
-using decision_tree = ml::decision_tree<ml::tulpe_sheet<labels, std::string, std::string,
-                                                     bool, int, std::string>>;
+using decision_tree = ml::decision_tree<
+    ml::tulpe_sheet<labels, std::string, std::string, // NOLINT
+                    bool, int, std::string>>;
 const decision_tree::rows_t test_data{
     {"Slashdot", "France", true, 19, "None"},
     {"Slashdot", "UK", false, 21, "None"},
@@ -97,7 +98,7 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
 
   auto tree = decision_tree::build_tree(test_data);
   CHECK(to_string(tree) ==
-      R"(referrer == Google?
+        R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
    F-> read FAQ == false?
