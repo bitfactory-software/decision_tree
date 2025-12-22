@@ -15,10 +15,10 @@ TEST_CASE("build_tree1") {
 
   auto tree = decision_tree::build_tree(samples);
   CHECK(to_string(tree) ==
-        R"(x[0]:D?
+        R"(x[0] == D?
 T-> {D: 1}
-F-> x[0]:?
-   T-> x[1]:?
+F-> x[0] == ?
+   T-> x[1] == ?
       T-> {: 1}
       F-> {N: 1}
    F-> {N: 1}
@@ -46,7 +46,7 @@ TEST_CASE("build_tree2") {
 
   auto tree = decision_tree::build_tree(samples);
   CHECK(to_string(tree) ==
-        R"(x[5]:?
+        R"(x[5] == ?
 T-> {: 1, X: 1, Y: 1}
 F-> {: 1, Y: 1}
 )");
@@ -62,6 +62,6 @@ TEST_CASE("print empty node") {
     using decision_tree = ml::decision_tree<ml::array_sheet<std::string, 8>>;
     const decision_tree::rows_t samples{};
     auto tree = decision_tree::build_tree(samples);
-    CHECK(to_string(tree) == R"(x[0]:?
+    CHECK(to_string(tree) == R"(x[0] == ?
 )");
 }

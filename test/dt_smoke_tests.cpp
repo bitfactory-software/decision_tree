@@ -97,19 +97,19 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
 
   auto tree = decision_tree::build_tree(test_data);
   CHECK(to_string(tree) ==
-        R"(referrer:Google?
-T-> pages viewed:21?
+      R"(referrer == Google?
+T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ:1?
-      T-> {basic: 1}
-      F-> {None: 1}
-F-> referrer:Slashdot?
+   F-> read FAQ == false?
+      T-> {None: 1}
+      F-> {basic: 1}
+F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ:1?
-      T-> {basic: 4}
-      F-> pages viewed:21?
+   F-> read FAQ == false?
+      T-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
+      F-> {basic: 4}
 )");
 
   static_assert(
@@ -124,28 +124,28 @@ F-> referrer:Slashdot?
   auto tree_prune_0_1 =
       decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
   CHECK(to_string(tree_prune_0_1) ==
-        R"(referrer:Google?
-T-> pages viewed:21?
+        R"(referrer == Google?
+T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ:1?
-      T-> {basic: 1}
-      F-> {None: 1}
-F-> referrer:Slashdot?
+   F-> read FAQ == false?
+      T-> {None: 1}
+      F-> {basic: 1}
+F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ:1?
-      T-> {basic: 4}
-      F-> pages viewed:21?
+   F-> read FAQ == false?
+      T-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
+      F-> {basic: 4}
 )");
   auto tree_prune_1_0 = decision_tree::prune(tree_prune_0_1, 1.0);
   CHECK(to_string(tree_prune_1_0) ==
-        R"(referrer:Google?
-T-> pages viewed:21?
+        R"(referrer == Google?
+T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ:1?
-      T-> {basic: 1}
-      F-> {None: 1}
+   F-> read FAQ == false?
+      T-> {None: 1}
+      F-> {basic: 1}
 F-> {None: 6, basic: 5}
 )");
 

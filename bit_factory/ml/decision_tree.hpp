@@ -64,8 +64,8 @@ struct remove_last<std::tuple<Args...>> {
 
 template <auto Labels, typename... Values>
 struct tulpe_sheet {
-  //static_assert(
-  //    std::same_as<decltype(Labels), const char * [sizeof...(Values)]>);
+  // static_assert(
+  //     std::same_as<decltype(Labels), const char * [sizeof...(Values)]>);
   using row_t = std::tuple<Values...>;
   inline static constexpr std::size_t column_count = std::tuple_size_v<row_t>;
   inline static constexpr std::size_t predict_column = column_count - 1;
@@ -92,8 +92,7 @@ struct tulpe_sheet {
     return std::get<column_count - 1>(row);
   }
 
-  static std::string get_label(std::size_t index) {
-    return Labels[index]; }
+  static std::string get_label(std::size_t index) { return Labels[index]; }
 };
 
 template <typename ObservationValue, std::size_t ObservationSize,
@@ -181,8 +180,12 @@ struct decision_tree {
     values_variant_t value;
     friend std::ostream& operator<<(std::ostream& os,
                                     column_value_t const& column_value) {
-      os << Sheet::get_label(column_value.column) << ":";
-      std::visit([&](const auto v) { os << v; }, column_value.value);
+      os << Sheet::get_label(column_value.column);
+      std::visit(
+          [&](const auto v) {
+            os << std::boolalpha << decision_tree::splits_op(v) << v;
+          },
+          column_value.value);
       return os << "?\n";
     }
   };
@@ -232,9 +235,18 @@ struct decision_tree {
   }
 
   template <typename V>
+  [[nodiscard]] static constexpr std::string splits_op(
+      [[maybe_unused]] V const& column_value) {
+    if constexpr (std::is_arithmetic_v<V> && !std::same_as<V, bool>) {
+      return " >= ";
+    } else {
+      return " == ";
+    }
+  }
+  template <typename V>
   [[nodiscard]] static constexpr bool splits(V const& query,
                                              V const& column_value) {
-    if constexpr (std::is_arithmetic_v<V>) {
+    if constexpr (std::is_arithmetic_v<V> && !std::same_as<V, bool>) {
       return query >= column_value;
     } else {
       return query == column_value;
