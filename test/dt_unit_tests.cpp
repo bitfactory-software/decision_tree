@@ -56,3 +56,12 @@ F-> {: 1, Y: 1}
   };
   CHECK(test({___, ___, ___, ___, ___, ___, Y, ___}) == "{: 1, X: 1, Y: 1}");
 }
+
+TEST_CASE("print empty node") {
+    using namespace bit_factory;
+    using decision_tree = ml::decision_tree<ml::array_sheet<std::string, 8>>;
+    const decision_tree::rows_t samples{};
+    auto tree = decision_tree::build_tree(samples);
+    CHECK(to_string(tree) == R"(0:?
+)");
+}

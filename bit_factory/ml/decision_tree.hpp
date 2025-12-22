@@ -196,10 +196,12 @@ struct decision_tree {
       } else {
         auto const& children = std::get<children_t>(p.node.node_data);
         os << p.node.column_value;
-        os << p.indent << "T-> ";
-        os << print_node{*children.true_path, p.indent + "   "};
-        os << p.indent << "F-> ";
-        os << print_node{*children.false_path, p.indent + "   "};
+        if (children.true_path)
+          os << p.indent << "T-> "
+             << print_node{*children.true_path, p.indent + "   "};
+        if (children.false_path)
+          os << p.indent << "F-> "
+             << print_node{*children.false_path, p.indent + "   "};
         return os;
       }
     }
