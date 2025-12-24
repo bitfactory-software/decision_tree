@@ -16,9 +16,9 @@ function(decision_tree_setup_dependencies)
   message("cpm add packages...") 
   set(CMAKE_FOLDER __3rdParty)
 
-#  if(NOT TARGET fmtlib::fmtlib)
-#    cpmaddpackage("gh:fmtlib/fmt#11.1.4")
-#  endif()
+  if(NOT TARGET anyxx::anyxx)
+    cpmaddpackage("gh:bitfactory-software/anyxx#0.1.0")
+  endif()
 
   if(NOT TARGET Catch2::Catch2WithMain)
     cpmaddpackage("gh:catchorg/Catch2@3.8.1")

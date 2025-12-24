@@ -97,6 +97,7 @@ include(cmake/PackageProject.cmake)
 # we know we want to ship
 decision_tree_package_project(
   TARGETS
+  anyxx
   decision_tree
   decision_tree_options
   decision_tree_warnings
