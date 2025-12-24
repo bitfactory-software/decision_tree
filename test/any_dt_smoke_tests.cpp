@@ -127,9 +127,9 @@ const samples test_data = {{"Slashdot", "France", true, 19, "None"},
                            {"Digg", "USA", true, 24, "basic"},
                            {"(direct)", "New Zealand", false, 12, "None"},
                            {"(direct)", "UK", false, 21, "basic"}};
+any::sheet<> sheet = test_data;
 
 TEST_CASE("any, split_table_by_column_value") {
-  any::sheet<> sheet = test_data;
   auto split = any::decision_tree::split_table_by_column_value(2, sheet, true);
 
   CHECK(split[0].rows.size() == 8);
@@ -164,8 +164,7 @@ TEST_CASE("any, split_table_by_column_value") {
 }
 
 TEST_CASE("any, result_counts") {
-   using namespace std::string_literals;
-  any::sheet<> sheet = test_data;
+  using namespace std::string_literals;
   auto counts = any::decision_tree{sheet}.result_counts(sheet);
   CHECK(counts.size() == 3);
   CHECK(counts["None"s] == 7);
@@ -178,98 +177,101 @@ TEST_CASE("any, result_counts") {
   CHECK_THAT(e, WithinAbs(1.50524081494414785, 0.00000001));
 }
 
-// TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
-//   using namespace std::string_literals;
-//
-//   auto tree = decision_tree::build_tree(test_data);
-//   CHECK(to_string(tree) ==
-//         R"(referrer == Google?
-//  T-> pages viewed >= 21?
-//    T-> {Premium: 3}
-//    F-> read FAQ == false?
-//       T-> {None: 1}
-//       F-> {basic: 1}
-//  F-> referrer == Slashdot?
-//    T-> {None: 3}
-//    F-> read FAQ == false?
-//       T-> pages viewed >= 21?
-//          T-> {basic: 1}
-//          F-> {None: 3}
-//       F-> {basic: 4}
-//)");
-//
-//   static_assert(
-//       std::same_as<
-//           decision_tree::observation_t,
-//           std::tuple<std::optional<std::string>, std::optional<std::string>,
-//                      std::optional<bool>, std::optional<int>>>);
-//   auto prediction = decision_tree::classify(tree, {"(direct)", "USA", true,
-//   5}); CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
-//   CHECK(decision_tree::to_string(prediction) == "{basic: 4}");
-//
-//   auto tree_prune_0_1 =
-//       decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
-//   CHECK(to_string(tree_prune_0_1) ==
-//         R"(referrer == Google?
-//  T-> pages viewed >= 21?
-//    T-> {Premium: 3}
-//    F-> read FAQ == false?
-//       T-> {None: 1}
-//       F-> {basic: 1}
-//  F-> referrer == Slashdot?
-//    T-> {None: 3}
-//    F-> read FAQ == false?
-//       T-> pages viewed >= 21?
-//          T-> {basic: 1}
-//          F-> {None: 3}
-//       F-> {basic: 4}
-//)");
-//   auto tree_prune_1_0 = decision_tree::prune(tree_prune_0_1, 1.0);
-//   CHECK(to_string(tree_prune_1_0) ==
-//         R"(referrer == Google?
-//  T-> pages viewed >= 21?
-//    T-> {Premium: 3}
-//    F-> read FAQ == false?
-//       T-> {None: 1}
-//       F-> {basic: 1}
-//  F-> {None: 6, basic: 5}
-//)");
-//
-//   {
-//     auto prediction_with_missing1 =
-//     decision_tree::classify_with_missing_data(
-//         tree, {"Google", {}, true, {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing1) ==
-//           "{Premium: 2.25, basic: 0.25}");
-//     auto prediction_with_missing2 =
-//     decision_tree::classify_with_missing_data(
-//         tree, {"Google", "France", {}, {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing2) ==
-//           "{None: 0.125, Premium: 2.25, basic: 0.125}");
-//     auto prediction_with_missing3 =
-//         decision_tree::classify_with_missing_data(tree, {"Google", {}, {},
-//         {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing3) ==
-//           "{None: 0.125, Premium: 2.25, basic: 0.125}");
-//   }
-//
-//   {
-//     auto prediction_with_missing1 =
-//     decision_tree::classify_with_missing_data(
-//         tree_prune_1_0, {"Google", {}, true, {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing1) ==
-//           "{Premium: 2.25, basic: 0.25}");
-//     auto prediction_with_missing2 =
-//     decision_tree::classify_with_missing_data(
-//         tree_prune_1_0, {"Google", "France", {}, {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing2) ==
-//           "{None: 0.125, Premium: 2.25, basic: 0.125}");
-//     auto prediction_with_missing3 =
-//     decision_tree::classify_with_missing_data(
-//         tree_prune_1_0, {"Google", {}, {}, {}});
-//     CHECK(decision_tree::to_string(prediction_with_missing3) ==
-//           "{None: 0.125, Premium: 2.25, basic: 0.125}");
-//   }
-// }
+TEST_CASE("any, build_tree, classify, prune, classify_with_missing_data") {
+  using namespace std::string_literals;
+
+  auto tree_structure = any::decision_tree{test_data};
+  auto tree = tree_structure.build_tree();
+
+  CHECK(tree_structure.to_string(tree) ==
+        R"(referrer == Google?
+  T-> pages viewed >= 21?
+    T-> {Premium: 3}
+    F-> read FAQ == false?
+       T-> {None: 1}
+       F-> {basic: 1}
+  F-> referrer == Slashdot?
+    T-> {None: 3}
+    F-> read FAQ == false?
+       T-> pages viewed >= 21?
+          T-> {basic: 1}
+          F-> {None: 3}
+       F-> {basic: 4}
+)");
+
+  //   static_assert(
+  //       std::same_as<
+  //           decision_tree::observation_t,
+  //           std::tuple<std::optional<std::string>,
+  //           std::optional<std::string>,
+  //                      std::optional<bool>, std::optional<int>>>);
+  //   auto prediction = decision_tree::classify(tree, {"(direct)", "USA", true,
+  //   5}); CHECK(*prediction.begin() == decision_tree::result_t{"basic", 4});
+  //   CHECK(decision_tree::to_string(prediction) == "{basic: 4}");
+  //
+  //   auto tree_prune_0_1 =
+  //       decision_tree::prune(decision_tree::build_tree(test_data), 0.1);
+  //   CHECK(to_string(tree_prune_0_1) ==
+  //         R"(referrer == Google?
+  //  T-> pages viewed >= 21?
+  //    T-> {Premium: 3}
+  //    F-> read FAQ == false?
+  //       T-> {None: 1}
+  //       F-> {basic: 1}
+  //  F-> referrer == Slashdot?
+  //    T-> {None: 3}
+  //    F-> read FAQ == false?
+  //       T-> pages viewed >= 21?
+  //          T-> {basic: 1}
+  //          F-> {None: 3}
+  //       F-> {basic: 4}
+  //)");
+  //   auto tree_prune_1_0 = decision_tree::prune(tree_prune_0_1, 1.0);
+  //   CHECK(to_string(tree_prune_1_0) ==
+  //         R"(referrer == Google?
+  //  T-> pages viewed >= 21?
+  //    T-> {Premium: 3}
+  //    F-> read FAQ == false?
+  //       T-> {None: 1}
+  //       F-> {basic: 1}
+  //  F-> {None: 6, basic: 5}
+  //)");
+  //
+  //   {
+  //     auto prediction_with_missing1 =
+  //     decision_tree::classify_with_missing_data(
+  //         tree, {"Google", {}, true, {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing1) ==
+  //           "{Premium: 2.25, basic: 0.25}");
+  //     auto prediction_with_missing2 =
+  //     decision_tree::classify_with_missing_data(
+  //         tree, {"Google", "France", {}, {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing2) ==
+  //           "{None: 0.125, Premium: 2.25, basic: 0.125}");
+  //     auto prediction_with_missing3 =
+  //         decision_tree::classify_with_missing_data(tree, {"Google", {}, {},
+  //         {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing3) ==
+  //           "{None: 0.125, Premium: 2.25, basic: 0.125}");
+  //   }
+  //
+  //   {
+  //     auto prediction_with_missing1 =
+  //     decision_tree::classify_with_missing_data(
+  //         tree_prune_1_0, {"Google", {}, true, {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing1) ==
+  //           "{Premium: 2.25, basic: 0.25}");
+  //     auto prediction_with_missing2 =
+  //     decision_tree::classify_with_missing_data(
+  //         tree_prune_1_0, {"Google", "France", {}, {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing2) ==
+  //           "{None: 0.125, Premium: 2.25, basic: 0.125}");
+  //     auto prediction_with_missing3 =
+  //     decision_tree::classify_with_missing_data(
+  //         tree_prune_1_0, {"Google", {}, {}, {}});
+  //     CHECK(decision_tree::to_string(prediction_with_missing3) ==
+  //           "{None: 0.125, Premium: 2.25, basic: 0.125}");
+  //   }
+}
 }  // namespace any_dt_smoke_test
 }  // namespace

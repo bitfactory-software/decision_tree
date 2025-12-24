@@ -232,6 +232,7 @@ struct decision_tree {
           best_gain = {possible_gain, {i, value}, split_sets};
       }
     }
+    return best_gain;
   }
 
   [[nodiscard]] tree_t build_tree(auto const& get_rows, auto score_function) {
