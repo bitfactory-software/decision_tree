@@ -106,7 +106,7 @@ struct print_result {
 //}
 
 struct decision_tree {
-  sheet<> sheet_;
+  sheet<> const& sheet_;
 
   struct column_value_t {
     std::size_t column = {};

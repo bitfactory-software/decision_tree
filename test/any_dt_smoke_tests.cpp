@@ -163,19 +163,21 @@ TEST_CASE("any, split_table_by_column_value") {
           }) != split[1].rows.end());
 }
 
-// TEST_CASE("result_counts") {
-//   auto counts = decision_tree::result_counts(pointer_to_test_data_rows);
-//   CHECK(counts.size() == 3);
-//   CHECK(counts["None"] == 7);
-//   CHECK(counts["basic"] == 6);
-//   CHECK(counts["Premium"] == 3);
-//
-//   auto impurity = decision_tree::gini_impurity(counts);
-//   CHECK_THAT(impurity, WithinAbs(0.6328125, 0.00000001));
-//   auto e = decision_tree::entropy(counts);
-//   CHECK_THAT(e, WithinAbs(1.50524081494414785, 0.00000001));
-// }
-//
+TEST_CASE("any, result_counts") {
+   using namespace std::string_literals;
+  any::sheet<> sheet = test_data;
+  auto counts = any::decision_tree{sheet}.result_counts(sheet);
+  CHECK(counts.size() == 3);
+  CHECK(counts["None"s] == 7);
+  CHECK(counts["basic"s] == 6);
+  CHECK(counts["Premium"s] == 3);
+
+  auto impurity = any::decision_tree::gini_impurity(counts);
+  CHECK_THAT(impurity, WithinAbs(0.6328125, 0.00000001));
+  auto e = any::decision_tree::entropy(counts);
+  CHECK_THAT(e, WithinAbs(1.50524081494414785, 0.00000001));
+}
+
 // TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
 //   using namespace std::string_literals;
 //
