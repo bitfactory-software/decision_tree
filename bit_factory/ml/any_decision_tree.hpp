@@ -135,6 +135,7 @@ struct decision_tree {
     friend std::ostream& operator<<(std::ostream& os,
                                     print_coumn_value const& print) {
       return os << print.sheet_.column_header(print.column_value.column)
+                << print.column_value.v.splits_op() << std::boolalpha
                 << print.column_value.v.to_string() << "?\n";
     }
   };
@@ -217,13 +218,16 @@ struct decision_tree {
 
   gain_t find_best_gain(auto const& get_rows, gain_t best_gain,
                         double current_score, auto score_function) {
-    for (auto i : std::views::iota(0u, sheet_.column_count())) {
+    for (auto i : std::views::iota(0u, sheet_.column_count() - 1)) {
       std::set<value<>> column_values;
-      for (auto const& row : get_rows()) column_values.insert(row[i]);
+      auto row_count = 0.0;
+      for (auto const& row : get_rows()) {
+        column_values.insert(row[i]);
+        ++row_count;
+      }
       for (const auto& value : column_values) {
         auto split_sets = split_table_by_column_value(i, get_rows, value);
-        double p = static_cast<double>(split_sets[0].rows.size()) /
-                   static_cast<double>(column_values.size());
+        double p = static_cast<double>(split_sets[0].rows.size()) / row_count;
         double possible_gain =
             current_score - p * score_function(result_counts(split_sets[0])) -
             (1 - p) * score_function(result_counts(split_sets[1]));

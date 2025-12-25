@@ -185,18 +185,18 @@ TEST_CASE("any, build_tree, classify, prune, classify_with_missing_data") {
 
   CHECK(tree_structure.to_string(tree) ==
         R"(referrer == Google?
-  T-> pages viewed >= 21?
-    T-> {Premium: 3}
-    F-> read FAQ == false?
-       T-> {None: 1}
-       F-> {basic: 1}
-  F-> referrer == Slashdot?
-    T-> {None: 3}
-    F-> read FAQ == false?
-       T-> pages viewed >= 21?
-          T-> {basic: 1}
-          F-> {None: 3}
-       F-> {basic: 4}
+T-> pages viewed >= 21?
+   T-> {Premium: 3}
+   F-> read FAQ == false?
+      T-> {None: 1}
+      F-> {basic: 1}
+F-> referrer == Slashdot?
+   T-> {None: 3}
+   F-> read FAQ == false?
+      T-> pages viewed >= 21?
+         T-> {basic: 1}
+         F-> {None: 3}
+      F-> {basic: 4}
 )");
 
   //   static_assert(
