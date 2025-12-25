@@ -36,9 +36,9 @@ using samples = std::vector<sample>;
 using namespace bit_factory::ml;
 using namespace any_dt_smoke_test;
 
-ANY_MODEL_MAP((any_dt_smoke_test::observation), bit_factory::ml::any::row) {
+ANY_MODEL_MAP((any_dt_smoke_test::observation), bit_factory::ml::any::observation) {
   static std::optional<bit_factory::ml::any::value<>> subscript(
-      observation const& self, std::size_t i) {
+      any_dt_smoke_test::observation const& self, std::size_t i) {
     switch (i) {
       case 0:
         if (self.referrer) return *self.referrer;
@@ -205,7 +205,7 @@ F-> referrer == Slashdot?
   //           std::tuple<std::optional<std::string>,
   //           std::optional<std::string>,
   //                      std::optional<bool>, std::optional<int>>>);
-  auto prediction = tree_structure.classify(tree, {"(direct)", "USA", true, 5});
+  auto prediction = tree_structure.classify(tree, observation{"(direct)", "USA", true, 5});
 
   CHECK(*prediction.begin() == any::result_t{"basic"s, 4});
   CHECK(to_string(prediction) == "{basic: 4}");
@@ -240,30 +240,30 @@ F-> {None: 6, basic: 5}
 
   {
     auto prediction_with_missing1 = tree_structure.classify_with_missing_data(
-        tree, {"Google"s, {}, true, {}});
+        tree, observation{"Google", {}, true, {}});
     CHECK(to_string(prediction_with_missing1) ==
           "{Premium: 2.25, basic: 0.25}");
     auto prediction_with_missing2 = tree_structure.classify_with_missing_data(
-        tree, {"Google"s, "France"s, {}, {}});
+        tree, observation{"Google", "France", {}, {}});
     CHECK(to_string(prediction_with_missing2) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
     auto prediction_with_missing3 =
-        tree_structure.classify_with_missing_data(tree, {"Google"s, {}, {}, {}});
+        tree_structure.classify_with_missing_data(tree, observation{"Google", {}, {}, {}});
     CHECK(to_string(prediction_with_missing3) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
   }
 
   {
     auto prediction_with_missing1 = tree_structure.classify_with_missing_data(
-        tree_prune_1_0, {"Google"s, {}, true, {}});
+        tree_prune_1_0, observation{"Google", {}, true, {}});
     CHECK(to_string(prediction_with_missing1) ==
           "{Premium: 2.25, basic: 0.25}");
     auto prediction_with_missing2 = tree_structure.classify_with_missing_data(
-        tree_prune_1_0, {"Google"s, "France"s, {}, {}});
+        tree_prune_1_0, observation{"Google", "France"s, {}, {}});
     CHECK(to_string(prediction_with_missing2) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
     auto prediction_with_missing3 = tree_structure.classify_with_missing_data(
-        tree_prune_1_0, {"Google"s, {}, {}, {}});
+        tree_prune_1_0, observation{"Google", {}, {}, {}});
     CHECK(to_string(prediction_with_missing3) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
   }

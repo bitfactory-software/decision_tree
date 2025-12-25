@@ -66,6 +66,10 @@ ANY(row,
                       })),
     anyxx::const_observer, )
 
+ANY(observation,
+    (ANY_OP_MAP_NAMED(std::optional<value<>>, [], subscript, (std::size_t), const)),
+    anyxx::const_observer, )
+
 ANY(sheet,
     (ANY_OP_MAP_NAMED(std::generator<row<>>, (), rows, (), const),
      ANY_METHOD(std::string, column_header, (std::size_t), const),
@@ -83,7 +87,6 @@ struct split_set {
 };
 using split_sets_t = std::array<split_set, 2>;
 using result_t = typename result_counts_t::value_type;
-using observation_t = std::vector<std::optional<value<>>>;
 
 struct print_result {
   result_counts_t const& result_counts;
@@ -257,16 +260,16 @@ struct decision_tree {
   [[nodiscard]] tree_t build_tree() { return build_tree(sheet_, &entropy); }
 
   [[nodiscard]] result_counts_t classify(tree_t const& tree,
-                                         observation_t const& observation) {
+                                         observation<> const& probe) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
     auto const& children = std::get<children_t>(tree.node_data);
-    auto query_value = observation[tree.column_value.column];
+    auto query_value = probe[tree.column_value.column];
     if (!query_value || !children.true_path || !children.false_path) return {};
     if (query_value->take_true_path(tree.column_value.v))
-      return classify(*children.true_path, observation);
+      return classify(*children.true_path, probe);
     else
-      return classify(*children.false_path, observation);
+      return classify(*children.false_path, probe);
   }
 
   [[nodiscard]] static double sum(result_counts_t const& result_counts) {
@@ -281,11 +284,11 @@ struct decision_tree {
   }
 
   [[nodiscard]] result_counts_t combine_children_of_missing_data_node(
-      children_t const& children, observation_t const& observation) {
+      children_t const& children, observation<> const& probe) {
     auto result_true =
-        classify_with_missing_data(*children.true_path, observation);
+        classify_with_missing_data(*children.true_path, probe);
     auto result_false =
-        classify_with_missing_data(*children.false_path, observation);
+        classify_with_missing_data(*children.false_path, probe);
     auto sum_true = sum(result_true);
     auto sum_false = sum(result_false);
     auto sum_both = sum_true + sum_false;
@@ -296,18 +299,18 @@ struct decision_tree {
   }
 
   [[nodiscard]] result_counts_t classify_with_missing_data(
-      tree_t const& tree, observation_t const& observation) {
+      tree_t const& tree, observation<> const& probe) {
     if (auto result = std::get_if<result_counts_t>(&tree.node_data))
       return *result;
 
     auto const& children = std::get<children_t>(tree.node_data);
-    auto query_value = observation[tree.column_value.column];
+    auto query_value = probe[tree.column_value.column];
     if (!query_value)
-      return combine_children_of_missing_data_node(children, observation);
+      return combine_children_of_missing_data_node(children, probe);
     else if (query_value->take_true_path(tree.column_value.v))
-      return classify_with_missing_data(*children.true_path, observation);
+      return classify_with_missing_data(*children.true_path, probe);
     else
-      return classify_with_missing_data(*children.false_path, observation);
+      return classify_with_missing_data(*children.false_path, probe);
   }
 
   [[nodiscard]] static result_counts_t as_one(result_counts_t l,
