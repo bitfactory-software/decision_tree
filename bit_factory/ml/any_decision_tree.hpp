@@ -98,12 +98,12 @@ struct print_result {
   }
 };
 
-//[[nodiscard]] static std::string to_string(
-//    result_counts_t const& result_counts) {
-//  std::stringstream s;
-//  s << print_result{result_counts};
-//  return s.str();
-//}
+[[nodiscard]] static std::string to_string(
+    result_counts_t const& result_counts) {
+  std::stringstream s;
+  s << print_result{result_counts};
+  return s.str();
+}
 
 struct decision_tree {
   sheet<> const& sheet_;
