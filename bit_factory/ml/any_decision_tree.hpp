@@ -82,6 +82,33 @@ struct is_tuple_impl<std::tuple<Args...>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_tuple = is_tuple_impl<T>::value;
 
+template <size_t I, typename Tuple>
+auto get_tuple_element(Tuple&& tuple, size_t i) {
+  if (I == i) return std::get<I>(std::forward<Tuple>(tuple));
+
+  if constexpr (I + 1 < std::tuple_size_v<Tuple>) {
+    return get_tuple_element<I + 1>(std::forward<Tuple>(tuple), i);
+  } else {
+    throw std::out_of_range("Index out of range");
+  }
+}
+template <typename T>
+  requires is_tuple<T>
+struct row_model_map<T> : row_default_model_map<T> {
+  static value<> subscript(T const& tuple, std::size_t i) {
+    return get_tuple_element<0>(tuple, i);
+  }
+};
+
+template <typename T>
+  requires is_tuple<T>
+struct observation_model_map<T> : observation_default_model_map<T> {
+  static std::optional<value<>> subscript(T const& tuple, std::size_t i) {
+    if (auto v = get_tuple_element<0>(tuple, i)) return value<>(std::move(*v));
+    return {};
+  };
+};
+
 using rows_t = std::vector<row<>>;
 using rows_set_t = std::set<row<>>;
 using result_counts_t = std::map<value<>, double>;
