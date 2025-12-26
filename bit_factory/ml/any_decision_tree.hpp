@@ -75,6 +75,13 @@ ANY(sheet,
      ANY_METHOD(std::size_t, column_count, (), const)),
     anyxx::const_observer, )
 
+template <typename T>
+struct is_tuple_impl : std::false_type {};
+template <typename... Args>
+struct is_tuple_impl<std::tuple<Args...>> : std::true_type {};
+template <typename T>
+inline constexpr bool is_tuple = is_tuple_impl<T>::value;
+
 using rows_t = std::vector<row<>>;
 using rows_set_t = std::set<row<>>;
 using result_counts_t = std::map<value<>, double>;
