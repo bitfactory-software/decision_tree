@@ -162,6 +162,7 @@ TEST_CASE("any, split_table_by_column_value") {
 
 TEST_CASE("any, result_counts") {
   using namespace std::string_literals;
+
   auto counts = any_decision_tree::result_counts(sheet, sheet);
   CHECK(counts.size() == 3);
   CHECK(counts["None"s] == 7);

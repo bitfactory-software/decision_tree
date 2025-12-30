@@ -28,10 +28,10 @@ ANY(value,
                             if constexpr (std::is_arithmetic_v<T> &&
                                           !std::same_as<T, bool>) {
                               return x >=
-                                     *anyxx::unchecked_unerase_cast<T>(rhs);
+                                     *anyxx::unerase_cast<T>(rhs);
                             } else {
                               return x ==
-                                     *anyxx::unchecked_unerase_cast<T>(rhs);
+                                     *anyxx::unerase_cast<T>(rhs);
                               ;
                             }
                           }),
@@ -48,13 +48,13 @@ ANY(value,
                           }),
      ANY_OP_DEFAULTED(bool, <, less, (value<> const&), const,
                       [x](value<> const& rhs) {
-                        return x < *anyxx::unchecked_unerase_cast<T>(rhs);
+                        return x < *anyxx::unerase_cast<T>(rhs);
                       }),
      ANY_OP_DEFAULTED(bool, ==, eq, (value<> const&), const,
                       [x](value<> const& rhs) {
-                        return x == *anyxx::unchecked_unerase_cast<T>(rhs);
+                        return x == *anyxx::unerase_cast<T>(rhs);
                       })),
-    anyxx::const_observer, )
+    anyxx::value, )
 
 ANY(row,
     (ANY_OP_MAP_NAMED(value<>, [], subscript, (std::size_t), const),
@@ -75,12 +75,54 @@ ANY(sheet,
      ANY_METHOD(std::size_t, column_count, (), const)),
     anyxx::const_observer, )
 
+namespace detail {
+
 template <typename T>
 struct is_tuple_impl : std::false_type {};
 template <typename... Args>
 struct is_tuple_impl<std::tuple<Args...>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_tuple = is_tuple_impl<T>::value;
+
+template <typename T, typename... Ts>
+struct unique : std::type_identity<T> {};
+
+template <typename... Ts, typename U, typename... Us>
+struct unique<std::tuple<Ts...>, U, Us...>
+    : std::conditional_t<(std::is_same_v<U, Ts> || ...),
+                         unique<std::tuple<Ts...>, Us...>,
+                         unique<std::tuple<Ts..., U>, Us...>> {};
+
+template <typename... Ts>
+using unique_tuple = typename unique<std::tuple<>, Ts...>::type;
+
+template <typename Tuple>
+struct to_variant;
+
+template <typename... Ts>
+struct to_variant<std::tuple<Ts...>> {
+  using type = std::variant<Ts...>;
+};
+
+template <class Tuple>
+struct remove_last;
+
+template <>
+struct remove_last<std::tuple<>>;  // Define as you wish or leave undefined
+
+template <class... Args>
+struct remove_last<std::tuple<Args...>> {
+ private:
+  using Tuple = std::tuple<Args...>;
+
+  template <std::size_t... n>
+  static std::tuple<std::tuple_element_t<n, Tuple>...> extract(
+      std::index_sequence<n...>);
+
+ public:
+  using type =
+      decltype(extract(std::make_index_sequence<sizeof...(Args) - 1>()));
+};
 
 template <size_t I, typename Tuple>
 value<> get_tuple_element(Tuple&& tuple, size_t i) {
@@ -92,22 +134,61 @@ value<> get_tuple_element(Tuple&& tuple, size_t i) {
     throw std::out_of_range("Index out of range");
   }
 }
+
+template <size_t I, typename Tuple>
+std::optional<value<>> get_optional_tuple_element(Tuple&& tuple, size_t i) {
+  if (I == i)
+    if (auto v = std::get<I>(std::forward<Tuple>(tuple)))
+      return *v;
+    else
+      return {};
+
+  if constexpr (I + 1 < std::tuple_size_v<std::decay_t<Tuple>>) {
+    return get_optional_tuple_element<I + 1>(std::forward<Tuple>(tuple), i);
+  } else {
+    throw std::out_of_range("Index out of range");
+  }
+}
+
+}  // namespace detail
+
 template <typename T>
-  requires is_tuple<T>
+struct value_model_map<std::optional<T>> : value_default_model_map<T> {
+  static std::string to_string(std::optional<T> const& x) {
+    if (x)
+      return std::format("{}", x);
+    else
+      return "{}";
+  };
+};
+
+template <typename T>
+  requires detail::is_tuple<T>
 struct row_model_map<T> : row_default_model_map<T> {
   static value<> subscript(T const& tuple, std::size_t i) {
-    return get_tuple_element<0>(tuple, i);
+    return detail::get_tuple_element<0>(tuple, i);
   }
 };
 
 template <typename T>
-  requires is_tuple<T>
+  requires detail::is_tuple<T>
 struct observation_model_map<T> : observation_default_model_map<T> {
   static std::optional<value<>> subscript(T const& tuple, std::size_t i) {
-    if (auto v = get_tuple_element<0>(tuple, i)) return value<>(std::move(*v));
-    return {};
+    return detail::get_optional_tuple_element<0>(tuple, i);
   };
 };
+
+template <typename... Values>
+struct observation_tuple;
+
+template <typename... Values>
+struct observation_tuple<std::tuple<Values...>> {
+  using type =
+      typename detail::remove_last<std::tuple<std::optional<Values>...>>::type;
+};
+
+template <typename Tuple>
+using observation_tuple_t = typename observation_tuple<Tuple>::type;
 
 using rows_t = std::vector<row<>>;
 using rows_set_t = std::set<row<>>;
