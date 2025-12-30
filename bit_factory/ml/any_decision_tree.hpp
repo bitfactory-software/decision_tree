@@ -83,10 +83,10 @@ template <typename T>
 inline constexpr bool is_tuple = is_tuple_impl<T>::value;
 
 template <size_t I, typename Tuple>
-auto get_tuple_element(Tuple&& tuple, size_t i) {
+value<> get_tuple_element(Tuple&& tuple, size_t i) {
   if (I == i) return std::get<I>(std::forward<Tuple>(tuple));
 
-  if constexpr (I + 1 < std::tuple_size_v<Tuple>) {
+  if constexpr (I + 1 < std::tuple_size_v<std::decay_t<Tuple>>) {
     return get_tuple_element<I + 1>(std::forward<Tuple>(tuple), i);
   } else {
     throw std::out_of_range("Index out of range");
@@ -298,7 +298,7 @@ struct gain_t {
                   .node_data = result_counts(sheet_, get_rows)};
 }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-[[nodiscard]] tree_t build_tree(sheet<> const& sheet_) {
+[[nodiscard]] inline tree_t build_tree(sheet<> const& sheet_) {
   return build_tree(sheet_, sheet_, &entropy);
 }
 

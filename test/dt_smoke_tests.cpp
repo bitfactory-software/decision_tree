@@ -91,22 +91,22 @@ TEST_CASE("split_table_by_column_value") {
                                  return splitted == expected;
                                }) != split[0].rows.end());
 
-  // CHECK(split[1].size() == 8);
-  //// std::println("split[1] {}", split[1]);
-  // const decision_tree::rows_t expected_1 = {
-  //     {"Slashdot", "UK", false, 21, "None"},
-  //     {"Kiwitobes", "UK", false, 19, "None"},
-  //     {"Google", "UK", false, 21, "Premium"},
-  //     {"Google", "UK", false, 18, "None"},
-  //     {"Google", "USA", false, 24, "Premium"},
-  //     {"Digg", "USA", false, 18, "None"},
-  //     {"(direct)", "New Zealand", false, 12, "None"},
-  //     {"(direct)", "UK", false, 21, "basic"}};
-  // for (auto const& expected : expected_1)
-  //   CHECK(std::ranges::find_if(split[1],
-  //                              [&](decision_tree::row_t const* splitted) {
-  //                                return *splitted == expected;
-  //                              }) != split[1].end());
+   CHECK(split[1].rows.size() == 8);
+  // std::println("split[1] {}", split[1]);
+   const samples expected_1 = {
+       {"Slashdot", "UK", false, 21, "None"},
+       {"Kiwitobes", "UK", false, 19, "None"},
+       {"Google", "UK", false, 21, "Premium"},
+       {"Google", "UK", false, 18, "None"},
+       {"Google", "USA", false, 24, "Premium"},
+       {"Digg", "USA", false, 18, "None"},
+       {"(direct)", "New Zealand", false, 12, "None"},
+       {"(direct)", "UK", false, 21, "basic"}};
+   for (auto const& expected : expected_1)
+     CHECK(std::ranges::find_if(split[1].rows,
+                                [&](any_decision_tree::row<> const& splitted) {
+                                  return splitted == expected;
+                                }) != split[1].rows.end());
 }
 
 /*
