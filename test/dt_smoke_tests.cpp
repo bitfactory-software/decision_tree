@@ -40,7 +40,7 @@ const samples test_data{{"Slashdot", "France", true, 19, "None"},
 
 ANY_MODEL_MAP((tuple_dt_smoke_test::samples),
               bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(tuple_dt_smoke_test::samples const& self) {
+  static std::generator<row<>> rows(tuple_dt_smoke_test::samples const& self) { // NOLINT
     for (auto const& sample : self) co_yield sample;
   };
   static std::string column_header(
@@ -72,7 +72,7 @@ namespace tuple_dt_smoke_test {
 
 using namespace bit_factory::ml;
 
-any_decision_tree::sheet<> sheet = test_data;
+const any_decision_tree::sheet<> sheet = test_data;
 
 TEST_CASE("split_table_by_column_value") {
   auto split = any_decision_tree::split_table_by_column_value(2, sheet, true);
@@ -187,7 +187,7 @@ F-> {None: 6, basic: 5}
     auto o1 = any_decision_tree::observation{p1};
     auto v1 = o1[0];
     CHECK(v1);
-    CHECK(v1->to_string() == "Google");
+    CHECK(v1->to_string() == "Google"); // NOLINT
     auto prediction_with_missing1 =
         classify_with_missing_data(tree, probe{"Google"s, {}, true, {}});
     CHECK(to_string(prediction_with_missing1) ==

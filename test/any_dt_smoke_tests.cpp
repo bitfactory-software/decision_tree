@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 
-#if defined(__clang__)
+#if defined(__clang__) // cppcheck-suppress 
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 #if defined(__GNUC__) and !defined(__clang__)
@@ -83,7 +83,7 @@ ANY_MODEL_MAP((any_dt_smoke_test::sample), bit_factory::ml::any_decision_tree::r
 };
 
 ANY_MODEL_MAP((any_dt_smoke_test::samples), bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(any_dt_smoke_test::samples const& self) {
+  static std::generator<row<>> rows(any_dt_smoke_test::samples const& self) { // NOLINT
     for (auto const& sample : self) co_yield sample;
   };
   static std::string column_header(
@@ -130,7 +130,7 @@ const samples test_data = {{"Slashdot", "France", true, 19, "None"},
                            {"Digg", "USA", true, 24, "basic"},
                            {"(direct)", "New Zealand", false, 12, "None"},
                            {"(direct)", "UK", false, 21, "basic"}};
-any_decision_tree::sheet<> sheet = test_data;
+const any_decision_tree::sheet<> sheet = test_data; 
 
 TEST_CASE("any, split_table_by_column_value") {
   auto split = any_decision_tree::split_table_by_column_value(2, sheet, true);
