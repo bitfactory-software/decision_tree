@@ -6,6 +6,12 @@
 #include <optional>
 #include <string>
 
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+#if defined(__GNUC__) and !defined(__clang__)
+#endif
+
 using namespace Catch::Matchers;
 using namespace bit_factory;
 namespace {

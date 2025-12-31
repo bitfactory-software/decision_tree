@@ -38,7 +38,7 @@ ANY(value,
      ANY_METHOD_DEFAULTED(std::string, to_string, (), const,
                           [&x]() { return std::format("{}", x); }),
      ANY_METHOD_DEFAULTED(std::string, splits_op, (), const,
-                          [&x]() {
+                          []() {
                             if constexpr (std::is_arithmetic_v<T> &&
                                           !std::same_as<T, bool>) {
                               return " >= ";
@@ -137,11 +137,12 @@ value<> get_tuple_element(Tuple&& tuple, size_t i) {
 
 template <size_t I, typename Tuple>
 std::optional<value<>> get_optional_tuple_element(Tuple&& tuple, size_t i) {
-  if (I == i)
+  if (I == i) {
     if (auto v = std::get<I>(std::forward<Tuple>(tuple)))
       return *v;
     else
       return {};
+  }
 
   if constexpr (I + 1 < std::tuple_size_v<std::decay_t<Tuple>>) {
     return get_optional_tuple_element<I + 1>(std::forward<Tuple>(tuple), i);
