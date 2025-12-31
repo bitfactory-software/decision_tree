@@ -27,11 +27,9 @@ ANY(value,
                           [&x](value<> const& rhs) {
                             if constexpr (std::is_arithmetic_v<T> &&
                                           !std::same_as<T, bool>) {
-                              return x >=
-                                     *anyxx::unerase_cast<T>(rhs);
+                              return x >= *anyxx::unerase_cast<T>(rhs);
                             } else {
-                              return x ==
-                                     *anyxx::unerase_cast<T>(rhs);
+                              return x == *anyxx::unerase_cast<T>(rhs);
                               ;
                             }
                           }),
@@ -54,7 +52,7 @@ ANY(value,
                       [x](value<> const& rhs) {
                         return x == *anyxx::unerase_cast<T>(rhs);
                       })),
-    anyxx::value, )
+    anyxx::value, anyxx::rtti)
 
 ANY(row,
     (ANY_OP_MAP_NAMED(value<>, [], subscript, (std::size_t), const),
@@ -67,13 +65,13 @@ ANY(row,
 ANY(observation,
     (ANY_OP_MAP_NAMED(std::optional<value<>>, [], subscript, (std::size_t),
                       const)),
-    anyxx::const_observer, )
+    anyxx::const_observer, anyxx::rtti)
 
 ANY(sheet,
     (ANY_OP_MAP_NAMED(std::generator<row<>>, (), rows, (), const),
      ANY_METHOD(std::string, column_header, (std::size_t), const),
      ANY_METHOD(std::size_t, column_count, (), const)),
-    anyxx::const_observer, )
+    anyxx::const_observer, anyxx::rtti)
 
 namespace detail {
 
