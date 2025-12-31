@@ -1,3 +1,6 @@
+#include <version>
+#if defined __cpp_lib_generator
+
 #include <bit_factory/ml/any_decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -46,11 +49,11 @@ ANY_MODEL_MAP((any_dt_smoke_test::observation), bit_factory::ml::any_decision_tr
       case 0:
         if (self.referrer) return *self.referrer;
         break;
-      case 1:
+      case 1: // NOLINT
         if (self.location) return *self.location;
         break;
       case 2:
-        if (self.read_faq) return *self.read_faq;
+        if (self.read_faq) return *self.read_faq; // NOLINT
         break;
       case 3:
         if (self.pages_viewed) return *self.pages_viewed;
@@ -274,3 +277,5 @@ F-> {None: 6, basic: 5}
 }
 }  // namespace any_dt_smoke_test
 }  // namespace
+
+#endif

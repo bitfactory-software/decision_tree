@@ -1,3 +1,6 @@
+#include <version>
+#if defined __cpp_lib_generator
+
 #include <bit_factory/ml/any_decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -8,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+
 
 using namespace Catch::Matchers;
 using namespace bit_factory::ml;
@@ -220,3 +224,5 @@ F-> {None: 6, basic: 5}
 
 }  // namespace tuple_dt_smoke_test
 }  // namespace
+
+#endif
