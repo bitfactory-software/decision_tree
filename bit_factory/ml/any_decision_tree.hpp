@@ -48,9 +48,9 @@ namespace bit_factory::ml::any_decision_tree {
                               return "";
                             } else {
                               if constexpr (std::is_arithmetic_v<T>) {
-                                return " >= " + to_string(x);
+                                return " >= " + anyxx::trait_as<value>(x).to_string();
                               } else {
-                                return " == " + to_string(x);
+                                return " == " + anyxx::trait_as<value>(x).to_string();
                               }
                             }
                           }),

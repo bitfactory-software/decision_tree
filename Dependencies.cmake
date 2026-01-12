@@ -17,7 +17,7 @@ function(decision_tree_setup_dependencies)
   set(CMAKE_FOLDER __3rdParty)
 
   if(NOT TARGET anyxx::anyxx)
-    cpmaddpackage("gh:bitfactory-software/anyxx#0.1.0")
+    cpmaddpackage("gh:bitfactory-software/anyxx#0.2.0")
   endif()
 
   if(NOT TARGET Catch2::Catch2WithMain)
