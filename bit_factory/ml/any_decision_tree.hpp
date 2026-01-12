@@ -364,7 +364,7 @@ struct gain_t {
           sheet_, get_rows,
           gain_t{.gain = 0.0, .criteria = {}, .split_sets = {}},
           score_function(result_counts(sheet_, get_rows)), score_function);
-      best_gain.gain > 0) {
+      best_gain.gain > 0.0) {
     return tree_t{.sheet_ = sheet_,
                   .column_value = best_gain.criteria,
                   .node_data = node_data_t{children_t{
