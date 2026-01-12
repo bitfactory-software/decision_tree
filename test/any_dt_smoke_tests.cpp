@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-#if defined(__clang__) // cppcheck-suppress 
+#if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 #if defined(__GNUC__) and !defined(__clang__)
