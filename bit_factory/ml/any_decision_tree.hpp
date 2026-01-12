@@ -22,7 +22,12 @@
 
 namespace bit_factory::ml::any_decision_tree {
 
-ANY(value,
+#if defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-lambda-capture"
+#endif
+
+    ANY(value,
     (ANY_METHOD_DEFAULTED(bool, take_true_path, (value<> const&), const,
                           [&x](value<> const& rhs) {
                             if constexpr (std::same_as<T, bool>) {
@@ -58,6 +63,10 @@ ANY(value,
                         return x == *anyxx::unerase_cast<T>(rhs);
                       })),
     anyxx::value, anyxx::rtti)
+
+#if defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 ANY(row,
     (ANY_OP_MAP_NAMED(value<>, [], subscript, (std::size_t), const),
