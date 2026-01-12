@@ -1,11 +1,11 @@
 #include <version>
 #if defined __cpp_lib_generator
 
+#include <algorithm>
 #include <bit_factory/ml/any_decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <algorithm>
 #include <optional>
 #include <string>
 
@@ -42,18 +42,19 @@ using samples = std::vector<sample>;
 using namespace bit_factory::ml;
 using namespace any_dt_smoke_test;
 
-ANY_MODEL_MAP((any_dt_smoke_test::observation), bit_factory::ml::any_decision_tree::observation) {
+ANY_MODEL_MAP((any_dt_smoke_test::observation),
+              bit_factory::ml::any_decision_tree::observation) {
   static std::optional<bit_factory::ml::any_decision_tree::value<>> subscript(
       any_dt_smoke_test::observation const& self, std::size_t i) {
     switch (i) {
       case 0:
         if (self.referrer) return *self.referrer;
         break;
-      case 1: // NOLINT
+      case 1:  // NOLINT
         if (self.location) return *self.location;
         break;
       case 2:
-        if (self.read_faq) return *self.read_faq; // NOLINT
+        if (self.read_faq) return *self.read_faq;  // NOLINT
         break;
       case 3:
         if (self.pages_viewed) return *self.pages_viewed;
@@ -65,9 +66,10 @@ ANY_MODEL_MAP((any_dt_smoke_test::observation), bit_factory::ml::any_decision_tr
   };
 };
 
-ANY_MODEL_MAP((any_dt_smoke_test::sample), bit_factory::ml::any_decision_tree::row) {
-  static bit_factory::ml::any_decision_tree::value<> subscript(sample const& self,
-                                                 std::size_t i) {
+ANY_MODEL_MAP((any_dt_smoke_test::sample),
+              bit_factory::ml::any_decision_tree::row) {
+  static bit_factory::ml::any_decision_tree::value<> subscript(
+      sample const& self, std::size_t i) {
     switch (i) {
       case 0:
         return self.referrer;
@@ -85,8 +87,10 @@ ANY_MODEL_MAP((any_dt_smoke_test::sample), bit_factory::ml::any_decision_tree::r
   };
 };
 
-ANY_MODEL_MAP((any_dt_smoke_test::samples), bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(any_dt_smoke_test::samples const& self) { // NOLINT
+ANY_MODEL_MAP((any_dt_smoke_test::samples),
+              bit_factory::ml::any_decision_tree::sheet) {
+  static std::generator<row<>> rows(
+      any_dt_smoke_test::samples const& self) {  // NOLINT
     for (auto const& sample : self) co_yield sample;
   };
   static std::string column_header(
@@ -133,29 +137,14 @@ const samples test_data = {{"Slashdot", "France", true, 19, "None"},
                            {"Digg", "USA", true, 24, "basic"},
                            {"(direct)", "New Zealand", false, 12, "None"},
                            {"(direct)", "UK", false, 21, "basic"}};
-const any_decision_tree::sheet<> sheet = test_data; 
+const any_decision_tree::sheet<> sheet = test_data;
 
 TEST_CASE("any, split_table_by_column_value") {
   auto split = any_decision_tree::split_table_by_column_value(2, sheet, true);
 
   CHECK(split[0].rows.size() == 8);
   // std::println("split[0] {}", split[0]);
-  const samples expected_0 = {{"Slashdot", "France", true, 19, "None"},
-                              {"Slashdot", "USA", true, 18, "None"},
-                              {"Kiwitobes", "France", true, 23, "basic"},
-                              {"Kiwitobes", "France", true, 19, "basic"},
-                              {"Google", "France", true, 23, "Premium"},
-                              {"Google", "UK", true, 18, "basic"},
-                              {"Digg", "New Zealand", true, 12, "basic"},
-                              {"Digg", "USA", true, 24, "basic"}};
-  for (auto const& expected : expected_0)
-    CHECK(std::ranges::find_if(split[0].rows, [&](any_decision_tree::row<> const& splitted) {
-            return splitted == any_decision_tree::row<>{expected};
-          }) != split[0].rows.end());
-
-  CHECK(split[1].rows.size() == 8);
-  // std::println("split[1] {}", split[1]);
-  const samples expected_1 = {{"Slashdot", "UK", false, 21, "None"},
+  const samples expected_0 = {{"Slashdot", "UK", false, 21, "None"},
                               {"Kiwitobes", "UK", false, 19, "None"},
                               {"Google", "UK", false, 21, "Premium"},
                               {"Google", "UK", false, 18, "None"},
@@ -163,10 +152,27 @@ TEST_CASE("any, split_table_by_column_value") {
                               {"Digg", "USA", false, 18, "None"},
                               {"(direct)", "New Zealand", false, 12, "None"},
                               {"(direct)", "UK", false, 21, "basic"}};
+  for (auto const& expected : expected_0)
+    CHECK(std::ranges::find_if(
+              split[0].rows, [&](any_decision_tree::row<> const& splitted) {
+                return splitted == any_decision_tree::row<>{expected};
+              }) != split[0].rows.end());
+
+  CHECK(split[1].rows.size() == 8);
+  // std::println("split[1] {}", split[1]);
+  const samples expected_1 = {{"Slashdot", "France", true, 19, "None"},
+                              {"Slashdot", "USA", true, 18, "None"},
+                              {"Kiwitobes", "France", true, 23, "basic"},
+                              {"Kiwitobes", "France", true, 19, "basic"},
+                              {"Google", "France", true, 23, "Premium"},
+                              {"Google", "UK", true, 18, "basic"},
+                              {"Digg", "New Zealand", true, 12, "basic"},
+                              {"Digg", "USA", true, 24, "basic"}};
   for (auto const& expected : expected_1)
-    CHECK(std::ranges::find_if(split[1].rows, [&](any_decision_tree::row<> const& splitted) {
-            return splitted == expected;
-          }) != split[1].rows.end());
+    CHECK(std::ranges::find_if(split[1].rows,
+                               [&](any_decision_tree::row<> const& splitted) {
+                                 return splitted == expected;
+                               }) != split[1].rows.end());
 }
 
 TEST_CASE("any, result_counts") {
@@ -194,16 +200,16 @@ TEST_CASE("any, build_tree, classify, prune, classify_with_missing_data") {
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ == false?
-      T-> pages viewed >= 21?
+   F-> read FAQ?
+      T-> {basic: 4}
+      F-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
-      F-> {basic: 4}
 )");
 
   //   static_assert(
@@ -217,37 +223,37 @@ F-> referrer == Slashdot?
   CHECK(*prediction.begin() == any_decision_tree::result_t{"basic"s, 4});
   CHECK(to_string(prediction) == "{basic: 4}");
 
-  auto tree_prune_0_1 = prune(any_decision_tree::build_tree(test_data_sheet), 0.1);
+  auto tree_prune_0_1 =
+      prune(any_decision_tree::build_tree(test_data_sheet), 0.1);
   CHECK(to_string(tree_prune_0_1) ==
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ == false?
-      T-> pages viewed >= 21?
+   F-> read FAQ?
+      T-> {basic: 4}
+      F-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
-      F-> {basic: 4}
 )");
-
   auto tree_prune_1_0 = prune(tree_prune_0_1, 1.0);
   CHECK(to_string(tree_prune_1_0) ==
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> {None: 6, basic: 5}
 )");
 
   {
-    auto prediction_with_missing1 = classify_with_missing_data(
-        tree, observation{"Google", {}, true, {}});
+    auto prediction_with_missing1 =
+        classify_with_missing_data(tree, observation{"Google", {}, true, {}});
     CHECK(to_string(prediction_with_missing1) ==
           "{Premium: 2.25, basic: 0.25}");
     auto prediction_with_missing2 = classify_with_missing_data(

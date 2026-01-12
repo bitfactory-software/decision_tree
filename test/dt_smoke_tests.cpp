@@ -12,7 +12,6 @@
 #include <string>
 #include <tuple>
 
-
 using namespace Catch::Matchers;
 using namespace bit_factory::ml;
 namespace {
@@ -44,7 +43,8 @@ const samples test_data{{"Slashdot", "France", true, 19, "None"},
 
 ANY_MODEL_MAP((tuple_dt_smoke_test::samples),
               bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(tuple_dt_smoke_test::samples const& self) { // NOLINT
+  static std::generator<row<>> rows(
+      tuple_dt_smoke_test::samples const& self) {  // NOLINT
     for (auto const& sample : self) co_yield sample;
   };
   static std::string column_header(
@@ -82,14 +82,14 @@ TEST_CASE("split_table_by_column_value") {
   auto split = any_decision_tree::split_table_by_column_value(2, sheet, true);
 
   CHECK(split[0].rows.size() == 8);
-  const samples expected_0 = {{"Slashdot", "France", true, 19, "None"},
-                              {"Slashdot", "USA", true, 18, "None"},
-                              {"Kiwitobes", "France", true, 23, "basic"},
-                              {"Kiwitobes", "France", true, 19, "basic"},
-                              {"Google", "France", true, 23, "Premium"},
-                              {"Google", "UK", true, 18, "basic"},
-                              {"Digg", "New Zealand", true, 12, "basic"},
-                              {"Digg", "USA", true, 24, "basic"}};
+  const samples expected_0 = {{"Slashdot", "UK", false, 21, "None"},
+                              {"Kiwitobes", "UK", false, 19, "None"},
+                              {"Google", "UK", false, 21, "Premium"},
+                              {"Google", "UK", false, 18, "None"},
+                              {"Google", "USA", false, 24, "Premium"},
+                              {"Digg", "USA", false, 18, "None"},
+                              {"(direct)", "New Zealand", false, 12, "None"},
+                              {"(direct)", "UK", false, 21, "basic"}};
   for (auto const& expected : expected_0)
     CHECK(std::ranges::find_if(split[0].rows,
                                [&](any_decision_tree::row<> const& splitted) {
@@ -98,14 +98,14 @@ TEST_CASE("split_table_by_column_value") {
 
   CHECK(split[1].rows.size() == 8);
   // std::println("split[1] {}", split[1]);
-  const samples expected_1 = {{"Slashdot", "UK", false, 21, "None"},
-                              {"Kiwitobes", "UK", false, 19, "None"},
-                              {"Google", "UK", false, 21, "Premium"},
-                              {"Google", "UK", false, 18, "None"},
-                              {"Google", "USA", false, 24, "Premium"},
-                              {"Digg", "USA", false, 18, "None"},
-                              {"(direct)", "New Zealand", false, 12, "None"},
-                              {"(direct)", "UK", false, 21, "basic"}};
+  const samples expected_1 = {{"Slashdot", "France", true, 19, "None"},
+                              {"Slashdot", "USA", true, 18, "None"},
+                              {"Kiwitobes", "France", true, 23, "basic"},
+                              {"Kiwitobes", "France", true, 19, "basic"},
+                              {"Google", "France", true, 23, "Premium"},
+                              {"Google", "UK", true, 18, "basic"},
+                              {"Digg", "New Zealand", true, 12, "basic"},
+                              {"Digg", "USA", true, 24, "basic"}};
   for (auto const& expected : expected_1)
     CHECK(std::ranges::find_if(split[1].rows,
                                [&](any_decision_tree::row<> const& splitted) {
@@ -137,16 +137,16 @@ TEST_CASE("build_tree, classify, prune, classify_with_missing_data") {
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ == false?
-      T-> pages viewed >= 21?
+   F-> read FAQ?
+      T-> {basic: 4}
+      F-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
-      F-> {basic: 4}
 )");
 
   // static_assert(
@@ -164,25 +164,25 @@ F-> referrer == Slashdot?
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> referrer == Slashdot?
    T-> {None: 3}
-   F-> read FAQ == false?
-      T-> pages viewed >= 21?
+   F-> read FAQ?
+      T-> {basic: 4}
+      F-> pages viewed >= 21?
          T-> {basic: 1}
          F-> {None: 3}
-      F-> {basic: 4}
 )");
   auto tree_prune_1_0 = prune(tree_prune_0_1, 1.0);
   CHECK(to_string(tree_prune_1_0) ==
         R"(referrer == Google?
 T-> pages viewed >= 21?
    T-> {Premium: 3}
-   F-> read FAQ == false?
-      T-> {None: 1}
-      F-> {basic: 1}
+   F-> read FAQ?
+      T-> {basic: 1}
+      F-> {None: 1}
 F-> {None: 6, basic: 5}
 )");
 
@@ -191,13 +191,13 @@ F-> {None: 6, basic: 5}
     auto o1 = any_decision_tree::observation{p1};
     auto v1 = o1[0];
     CHECK(v1);
-    CHECK(v1->to_string() == "Google"); // NOLINT
+    CHECK(v1->to_string() == "Google");  // NOLINT
     auto prediction_with_missing1 =
         classify_with_missing_data(tree, probe{"Google"s, {}, true, {}});
     CHECK(to_string(prediction_with_missing1) ==
           "{Premium: 2.25, basic: 0.25}");
-    auto prediction_with_missing2 = classify_with_missing_data(
-        tree, probe{"Google", "France", {}, {}});
+    auto prediction_with_missing2 =
+        classify_with_missing_data(tree, probe{"Google", "France", {}, {}});
     CHECK(to_string(prediction_with_missing2) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
     auto prediction_with_missing3 =
@@ -215,8 +215,8 @@ F-> {None: 6, basic: 5}
         tree_prune_1_0, probe{"Google", "France", {}, {}});
     CHECK(to_string(prediction_with_missing2) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
-    auto prediction_with_missing3 = classify_with_missing_data(
-        tree_prune_1_0, probe{"Google", {}, {}, {}});
+    auto prediction_with_missing3 =
+        classify_with_missing_data(tree_prune_1_0, probe{"Google", {}, {}, {}});
     CHECK(to_string(prediction_with_missing3) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
   }

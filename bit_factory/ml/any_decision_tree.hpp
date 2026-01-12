@@ -25,23 +25,28 @@ namespace bit_factory::ml::any_decision_tree {
 ANY(value,
     (ANY_METHOD_DEFAULTED(bool, take_true_path, (value<> const&), const,
                           [&x](value<> const& rhs) {
-                            if constexpr (std::is_arithmetic_v<T> &&
-                                          !std::same_as<T, bool>) {
-                              return x >= *anyxx::unerase_cast<T>(rhs);
+                            if constexpr (std::same_as<T, bool>) {
+                              return x != *anyxx::unerase_cast<T>(rhs);
                             } else {
-                              return x == *anyxx::unerase_cast<T>(rhs);
-                              ;
+                              if constexpr (std::is_arithmetic_v<T>) {
+                                return x >= *anyxx::unerase_cast<T>(rhs);
+                              } else {
+                                return x == *anyxx::unerase_cast<T>(rhs);
+                              }
                             }
                           }),
      ANY_METHOD_DEFAULTED(std::string, to_string, (), const,
                           [&x]() { return std::format("{}", x); }),
      ANY_METHOD_DEFAULTED(std::string, splits_op, (), const,
-                          []() {
-                            if constexpr (std::is_arithmetic_v<T> &&
-                                          !std::same_as<T, bool>) {
-                              return " >= ";
+                          [&x]() {
+                            if constexpr (std::same_as<T, bool>) {
+                              return "";
                             } else {
-                              return " == ";
+                              if constexpr (std::is_arithmetic_v<T>) {
+                                return " >= " + to_string(x);
+                              } else {
+                                return " == " + to_string(x);
+                              }
                             }
                           }),
      ANY_OP_DEFAULTED(bool, <, less, (value<> const&), const,
@@ -74,7 +79,6 @@ ANY(sheet,
     anyxx::const_observer, anyxx::rtti)
 
 namespace detail {
-
 template <typename T>
 struct is_tuple_impl : std::false_type {};
 template <typename... Args>
@@ -249,8 +253,7 @@ struct print_coumn_value {
   friend std::ostream& operator<<(std::ostream& os,
                                   print_coumn_value const& print) {
     return os << print.sheet_.column_header(print.column_value.column)
-              << print.column_value.v.splits_op() << std::boolalpha
-              << print.column_value.v.to_string() << "?\n";
+              << print.column_value.v.splits_op() << "?\n";
   }
 };
 
