@@ -58,7 +58,10 @@
             }
           },
           "cacheVariables": {
-            "CMAKE_CXX_FLAGS": "-fexceptions -frtt"
+            "CMAKE_CXX_FLAGS": "-fexceptions -frtt",
+            "decision_tree_ENABLE_CPPCHECK": true,
+            "decision_tree_ENABLE_CLANG_TIDY": true,
+            "decision_tree_ENABLE_SANITIZER_ADDRESS": false
           }
         },
         {

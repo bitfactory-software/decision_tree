@@ -309,7 +309,7 @@ struct decision_tree {
   }
 
   struct gain_t {
-    double value;
+    double gain;
     column_value_t criteria;
     split_sets_t split_sets;
   };
@@ -329,7 +329,7 @@ struct decision_tree {
         double possible_gain =
             current_score - p * score_function(result_counts(split_sets[0])) -
             (1 - p) * score_function(result_counts(split_sets[1]));
-        if (possible_gain > best_gain.value && !split_sets[0].empty() &&
+        if (possible_gain > best_gain.gain && !split_sets[0].empty() &&
             !split_sets[1].empty())
           best_gain = {possible_gain, {Column, value}, split_sets};
       }
@@ -344,9 +344,9 @@ struct decision_tree {
                                          auto score_function) {
     if (rows.empty()) return {};
     if (auto best_gain = find_best_gain<0>(
-            rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
+            rows, gain_t{.gain = 0.0, .criteria = {}, .split_sets = {}},
             score_function(result_counts(rows)), score_function);
-        best_gain.value > 0.0) {
+        best_gain.gain > 0.0) {
       return tree_t{.column_value = best_gain.criteria,
                     .node_data = node_data_t{children_t{
                         .true_path = std::make_unique<tree_t>(build_tree(

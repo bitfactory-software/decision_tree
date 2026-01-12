@@ -27,7 +27,9 @@ Checks: "*,
         -bugprone-reserved-identifier,
         -cert-dcl37-c,
         -cert-dcl51-cpp,
-        -readability-redundant-string-init
+        -readability-redundant-string-init,
+        -modernize-use-designated-initializers,
+        -readability-use-concise-preprocessor-directives
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
