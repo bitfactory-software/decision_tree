@@ -346,7 +346,7 @@ struct decision_tree {
     if (auto best_gain = find_best_gain<0>(
             rows, gain_t{.value = 0.0, .criteria = {}, .split_sets = {}},
             score_function(result_counts(rows)), score_function);
-        best_gain.value > 0) {
+        best_gain.value > 0.0) {
       return tree_t{.column_value = best_gain.criteria,
                     .node_data = node_data_t{children_t{
                         .true_path = std::make_unique<tree_t>(build_tree(
