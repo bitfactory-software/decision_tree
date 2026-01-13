@@ -27,7 +27,7 @@ namespace bit_factory::ml::any_decision_tree {
 #pragma GCC diagnostic ignored "-Wunused-lambda-capture"
 #endif
 
-    ANY(value,
+ANY(value,
     (ANY_METHOD_DEFAULTED(bool, take_true_path, (value<> const&), const,
                           [&x](value<> const& rhs) {
                             if constexpr (std::same_as<T, bool>) {
@@ -48,9 +48,11 @@ namespace bit_factory::ml::any_decision_tree {
                               return "";
                             } else {
                               if constexpr (std::is_arithmetic_v<T>) {
-                                return " >= " + anyxx::trait_as<value>(x).to_string();
+                                return " >= " +
+                                       anyxx::trait_as<value>(x).to_string();
                               } else {
-                                return " == " + anyxx::trait_as<value>(x).to_string();
+                                return " == " +
+                                       anyxx::trait_as<value>(x).to_string();
                               }
                             }
                           }),
@@ -84,6 +86,8 @@ ANY(observation,
 ANY(sheet,
     (ANY_OP_MAP_NAMED(std::generator<row<>>, (), rows, (), const),
      ANY_METHOD(std::string, column_header, (std::size_t), const),
+     ANY_METHOD_DEFAULTED(bool, column_is_significant, (std::size_t), const,
+                          []([[maybe_unused]] auto) { return false; }),
      ANY_METHOD(std::size_t, column_count, (), const)),
     anyxx::const_observer, anyxx::rtti)
 
@@ -468,7 +472,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   return score(pruned) - score_unpruned(true_result, false_result, score);
 }
 
-[[nodiscard]] inline children_t prune_children(tree_t const& tree,
+[[nodiscard]] inline children_t prune_children(
+                                               tree_t const& tree,
                                                double min_gain, auto score) {
   auto const& original_children = std::get<children_t>(tree.node_data);
   return {.true_path = std::make_unique<tree_t>(
@@ -477,8 +482,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
               prune(*original_children.false_path, min_gain, score))};
 }
 
-[[nodiscard]] inline tree_t prune(tree_t const& tree, double min_gain,
-                                  auto score) {
+[[nodiscard]] inline tree_t prune(tree_t const& tree,
+                                  double min_gain, auto score) {
   if (std::holds_alternative<result_counts_t>(tree.node_data))
     return tree_t{.sheet_ = tree.sheet_,
                   .column_value = tree.column_value,
@@ -487,6 +492,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   tree_t pruned{.sheet_ = tree.sheet_,
                 .column_value = tree.column_value,
                 .node_data = prune_children(tree, min_gain, score)};
+  if (tree.sheet_.column_is_significant(pruned.column_value.column)) return pruned;
+
   auto& pruned_children = std::get<children_t>(pruned.node_data);
   if (auto true_result =
           std::get_if<result_counts_t>(&pruned_children.true_path->node_data))
@@ -498,7 +505,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   return pruned;
 }
 
-[[nodiscard]] inline tree_t prune(tree_t const& tree, double min_gain) {
+[[nodiscard]] inline tree_t prune(tree_t const& tree,
+                                  double min_gain) {
   return prune(tree, min_gain, &entropy);
 }
 
