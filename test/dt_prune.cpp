@@ -11,7 +11,7 @@ using samples = std::vector<sample>;
 using probe = any_decision_tree::observation_tuple_t<sample>;
 
 struct sample_sheet {
-  samples const& data;
+  samples data;
   bool was_night_shift_is_significant = false;
 };
 
