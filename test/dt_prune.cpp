@@ -1,3 +1,6 @@
+#include <version>
+#if defined __cpp_lib_generator
+
 #include <bit_factory/ml/any_decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -11,7 +14,7 @@ using samples = std::vector<sample>;
 using probe = any_decision_tree::observation_tuple_t<sample>;
 
 struct sample_sheet {
-  samples data;
+  samples data; // NOLINT (cppcoreguidelines-pro-type-member-init,hicpp-member-init)
   bool was_night_shift_is_significant = false;
 };
 
@@ -115,3 +118,4 @@ F-> WasNighShift?
    F-> {: 1, N: 1}
 )");
 }
+#endif
