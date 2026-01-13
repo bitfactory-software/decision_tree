@@ -29,7 +29,8 @@ Checks: "*,
         -cert-dcl51-cpp,
         -readability-redundant-string-init,
         -modernize-use-designated-initializers,
-        -readability-use-concise-preprocessor-directives
+        -readability-use-concise-preprocessor-directives,
+        -cppcoreguidelines-avoid-const-or-ref-data-members
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
