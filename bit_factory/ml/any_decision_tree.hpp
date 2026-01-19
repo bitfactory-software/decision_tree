@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 // cppcheck-suppress-begin unknownMacro
 
@@ -318,8 +319,8 @@ struct print_node {
 
 [[nodiscard]] inline double result_counts_total(
     result_counts_t const& result_counts) {
-  return std::ranges::fold_left(result_counts | std::views::values, 0.0,
-                                std::plus<double>{});
+  auto values = result_counts | std::views::values;
+  return std::accumulate(values.begin(), values.end(), 0.0);
 }
 
 [[nodiscard]] inline double gini_impurity(result_counts_t const& counts) {
