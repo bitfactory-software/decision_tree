@@ -29,15 +29,15 @@ namespace bit_factory::ml::any_decision_tree {
 #endif
 
 ANY(value,
-    (ANY_METHOD_DEFAULTED(bool, take_true_path, (value<> const&), const,
-                          [&x](value<> const& rhs) {
+    (ANY_METHOD_DEFAULTED(bool, take_true_path, (anyxx::self const&), const,
+                          [&x](auto const& rhs) {
                             if constexpr (std::same_as<T, bool>) {
-                              return x != *anyxx::unerase_cast<T>(rhs);
+                              return x != rhs;
                             } else {
                               if constexpr (std::is_arithmetic_v<T>) {
-                                return x >= *anyxx::unerase_cast<T>(rhs);
+                                return x >= rhs;
                               } else {
-                                return x == *anyxx::unerase_cast<T>(rhs);
+                                return x == rhs;
                               }
                             }
                           }),
@@ -57,15 +57,15 @@ ANY(value,
                               }
                             }
                           }),
-     ANY_OP_DEFAULTED(bool, <, less, (value<> const&), const,
-                      [x](value<> const& rhs) {
-                        return x < *anyxx::unerase_cast<T>(rhs);
+     ANY_OP_DEFAULTED(bool, <, less, (anyxx::self const&), const,
+                      [x](auto const& rhs) {
+                        return x < rhs;
                       }),
-     ANY_OP_DEFAULTED(bool, ==, eq, (value<> const&), const,
-                      [x](value<> const& rhs) {
-                        return x == *anyxx::unerase_cast<T>(rhs);
+     ANY_OP_DEFAULTED(bool, ==, eq, (anyxx::self const&), const,
+                      [x](auto const& rhs) {
+                        return x == rhs;
                       })),
-    anyxx::value, anyxx::rtti)
+    anyxx::value, )
 
 #if defined(__clang__)
 #pragma GCC diagnostic pop
@@ -73,16 +73,16 @@ ANY(value,
 
 ANY(row,
     (ANY_OP_MAP_NAMED(value<>, [], subscript, (std::size_t), const),
-     ANY_OP_DEFAULTED(bool, ==, eq, (row<> const&), const,
-                      [x](row<> const& rhs) {
-                        return x == *anyxx::unchecked_unerase_cast<T>(rhs);
+     ANY_OP_DEFAULTED(bool, ==, eq, (anyxx::self const&), const,
+                      [x](auto const& rhs) {
+                        return x == rhs;
                       })),
     anyxx::const_observer, )
 
 ANY(observation,
     (ANY_OP_MAP_NAMED(std::optional<value<>>, [], subscript, (std::size_t),
                       const)),
-    anyxx::const_observer, anyxx::rtti)
+    anyxx::const_observer, )
 
 ANY(sheet,
     (ANY_OP_MAP_NAMED((anyxx::any_forward_range<row<>, row<>>), (), rows, (), const),
@@ -90,7 +90,7 @@ ANY(sheet,
      ANY_METHOD_DEFAULTED(bool, column_is_significant, (std::size_t), const,
                           []([[maybe_unused]] auto) { return false; }),
      ANY_METHOD(std::size_t, column_count, (), const)),
-    anyxx::const_observer, anyxx::rtti)
+    anyxx::const_observer, )
 
 namespace detail {
 template <typename T>
