@@ -189,7 +189,7 @@ F-> {None: 6, basic: 5}
   {
     auto p1 = probe{"Google"s, {}, true, {}};
     auto o1 = any_decision_tree::observation{p1};
-    auto v1 = o1[0u];
+    auto v1 = o1[0U];
     CHECK(v1);
     CHECK(v1->to_string() == "Google");  // NOLINT
     auto prediction_with_missing1 =
