@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -17,7 +18,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <numeric>
 
 // cppcheck-suppress-begin unknownMacro
 
@@ -58,13 +58,11 @@ ANY(value,
                             }
                           }),
      ANY_OP_DEFAULTED(bool, <, less, (anyxx::self const&), const,
-                      [x](auto const& rhs) {
-                        return x < rhs;
-                      }),
+                      [x](auto const& rhs) { return x < rhs; }),
      ANY_OP_DEFAULTED(bool, ==, eq, (anyxx::self const&), const,
-                      [x](auto const& rhs) {
-                        return x == rhs;
-                      })),
+                      [x](auto const& rhs) { return x == rhs; }),
+     ANY_OP_DEFAULTED(bool, !=, ne, (anyxx::self const&), const,
+                      [x](auto const& rhs) { return x != rhs; })),
     anyxx::value, )
 
 #if defined(__clang__)
@@ -74,9 +72,9 @@ ANY(value,
 ANY(row,
     (ANY_OP_MAP_NAMED(value<>, [], subscript, (std::size_t), const),
      ANY_OP_DEFAULTED(bool, ==, eq, (anyxx::self const&), const,
-                      [x](auto const& rhs) {
-                        return x == rhs;
-                      })),
+                      [x](auto const& rhs) { return x == rhs; }),
+     ANY_OP_DEFAULTED(bool, !=, ne, (anyxx::self const&), const,
+                      [x](auto const& rhs) { return x != rhs; })),
     anyxx::const_observer, )
 
 ANY(observation,
@@ -85,7 +83,8 @@ ANY(observation,
     anyxx::const_observer, )
 
 ANY(sheet,
-    (ANY_OP_MAP_NAMED((anyxx::any_forward_range<row<>, row<>>), (), rows, (), const),
+    (ANY_OP_MAP_NAMED((anyxx::any_forward_range<row<>, row<>>), (), rows, (),
+                      const),
      ANY_METHOD(std::string, column_header, (std::size_t), const),
      ANY_METHOD_DEFAULTED(bool, column_is_significant, (std::size_t), const,
                           []([[maybe_unused]] auto) { return false; }),
@@ -212,9 +211,7 @@ using rows_set_t = std::set<row<>>;
 using result_counts_t = std::map<value<>, double>;
 struct split_set {
   rows_t rows;
-  anyxx::any_forward_range<row<>, row<>> operator()() const {
-    return rows;
-  }
+  anyxx::any_forward_range<row<>, row<>> operator()() const { return rows; }
 };
 using split_sets_t = std::array<split_set, 2>;
 using result_t = typename result_counts_t::value_type;
@@ -473,8 +470,7 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   return score(pruned) - score_unpruned(true_result, false_result, score);
 }
 
-[[nodiscard]] inline children_t prune_children(
-                                               tree_t const& tree,
+[[nodiscard]] inline children_t prune_children(tree_t const& tree,
                                                double min_gain, auto score) {
   auto const& original_children = std::get<children_t>(tree.node_data);
   return {.true_path = std::make_unique<tree_t>(
@@ -483,8 +479,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
               prune(*original_children.false_path, min_gain, score))};
 }
 
-[[nodiscard]] inline tree_t prune(tree_t const& tree,
-                                  double min_gain, auto score) {
+[[nodiscard]] inline tree_t prune(tree_t const& tree, double min_gain,
+                                  auto score) {
   if (std::holds_alternative<result_counts_t>(tree.node_data))
     return tree_t{.sheet_ = tree.sheet_,
                   .column_value = tree.column_value,
@@ -493,7 +489,8 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   tree_t pruned{.sheet_ = tree.sheet_,
                 .column_value = tree.column_value,
                 .node_data = prune_children(tree, min_gain, score)};
-  if (tree.sheet_.column_is_significant(pruned.column_value.column)) return pruned;
+  if (tree.sheet_.column_is_significant(pruned.column_value.column))
+    return pruned;
 
   auto& pruned_children = std::get<children_t>(pruned.node_data);
   if (auto true_result =
@@ -506,8 +503,7 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
   return pruned;
 }
 
-[[nodiscard]] inline tree_t prune(tree_t const& tree,
-                                  double min_gain) {
+[[nodiscard]] inline tree_t prune(tree_t const& tree, double min_gain) {
   return prune(tree, min_gain, &entropy);
 }
 
