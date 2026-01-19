@@ -42,9 +42,9 @@ const samples test_data{
 
 ANY_MODEL_MAP((dt_prune_test::sample_sheet),
               bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(
+  static anyxx::any_forward_range<row<>, row<>> rows(
       dt_prune_test::sample_sheet const& self) {  // NOLINT
-    for (auto const& sample : self.data) co_yield sample;
+    return self.data;
   };
   static std::string column_header(
       [[maybe_unused]] dt_prune_test::sample_sheet const& self,

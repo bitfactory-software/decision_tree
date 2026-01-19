@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <bit_factory/anyxx.hpp>
+#include <bit_factory/anyxx_std.hpp>
 #include <cmath>
 #include <format>
-#include <generator>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -85,7 +85,7 @@ ANY(observation,
     anyxx::const_observer, anyxx::rtti)
 
 ANY(sheet,
-    (ANY_OP_MAP_NAMED(std::generator<row<>>, (), rows, (), const),
+    (ANY_OP_MAP_NAMED((anyxx::any_forward_range<row<>, row<>>), (), rows, (), const),
      ANY_METHOD(std::string, column_header, (std::size_t), const),
      ANY_METHOD_DEFAULTED(bool, column_is_significant, (std::size_t), const,
                           []([[maybe_unused]] auto) { return false; }),
@@ -212,8 +212,8 @@ using rows_set_t = std::set<row<>>;
 using result_counts_t = std::map<value<>, double>;
 struct split_set {
   rows_t rows;
-  std::generator<row<>> operator()() const {
-    for (auto const& row : rows) co_yield row;
+  anyxx::any_forward_range<row<>, row<>> operator()() const {
+    return rows;
   }
 };
 using split_sets_t = std::array<split_set, 2>;

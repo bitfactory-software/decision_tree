@@ -89,9 +89,9 @@ ANY_MODEL_MAP((any_dt_smoke_test::sample),
 
 ANY_MODEL_MAP((any_dt_smoke_test::samples),
               bit_factory::ml::any_decision_tree::sheet) {
-  static std::generator<row<>> rows(
+  static anyxx::any_forward_range<row<>, row<>> rows(
       any_dt_smoke_test::samples const& self) {  // NOLINT
-    for (auto const& sample : self) co_yield sample;
+    return self;
   };
   static std::string column_header(
       [[maybe_unused]] any_dt_smoke_test::samples const& self,
