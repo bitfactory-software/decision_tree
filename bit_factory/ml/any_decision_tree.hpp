@@ -371,25 +371,61 @@ struct gain_t {
   return best_gain;
 }
 
-[[nodiscard]] inline tree_t build_tree(sheet<> const& sheet_,
-                                       auto const& get_rows,
-                                       auto score_function) {
+using analysed_columns_t = std::vector<std::size_t>;
+
+[[nodiscard]] inline std::optional<std::size_t>
+find_first_untouched_significant_column(
+    sheet<> const& sheet_, analysed_columns_t const& analysed_columns) {
+  for (auto c : std::views::iota(std::size_t{0}, sheet_.column_count()))
+    if (sheet_.column_is_significant(c) &&
+        std::ranges::find(analysed_columns, c) == analysed_columns.end())
+      return {c};
+  return {};
+}
+[[nodiscard]] inline analysed_columns_t push_column(
+    analysed_columns_t analysed_columns, std::size_t c) {
+  analysed_columns.push_back(c);
+  return analysed_columns;
+}
+
+[[nodiscard]] inline tree_t build_tree_children(
+    sheet<> const& sheet_, auto score_function,
+    analysed_columns_t analysed_columns, gain_t gain) {
+  return tree_t{
+      .sheet_ = sheet_,
+      .column_value = gain.criteria,
+      .node_data = node_data_t{children_t{
+          .true_path = std::make_unique<tree_t>(
+              build_tree(sheet_, gain.split_sets[0], score_function,
+                         push_column(analysed_columns, gain.criteria.column))),
+          .false_path = std::make_unique<tree_t>(build_tree(
+              sheet_, gain.split_sets[1], score_function,
+              push_column(analysed_columns, gain.criteria.column)))}}};
+}
+
+[[nodiscard]] inline tree_t build_tree(
+    sheet<> const& sheet_, auto const& get_rows, auto score_function,
+    analysed_columns_t analysed_columns = {}) {
   if (auto best_gain = find_best_gain(
           sheet_, get_rows,
           gain_t{.gain = 0.0, .criteria = {}, .split_sets = {}},
           score_function(result_counts(sheet_, get_rows)), score_function);
       best_gain.gain > 0.0) {
-    return tree_t{.sheet_ = sheet_,
-                  .column_value = best_gain.criteria,
-                  .node_data = node_data_t{children_t{
-                      .true_path = std::make_unique<tree_t>(build_tree(
-                          sheet_, best_gain.split_sets[0], score_function)),
-                      .false_path = std::make_unique<tree_t>(build_tree(
-                          sheet_, best_gain.split_sets[1], score_function))}}};
-  } else
+    return build_tree_children(sheet_, score_function, analysed_columns,
+                               best_gain);
+  } else if (auto column = find_first_untouched_significant_column(
+                 sheet_, analysed_columns)) {
+    auto value = (*get_rows().begin())[*column];
+    return build_tree_children(
+        sheet_, score_function, analysed_columns,
+        {.gain = 0.0,
+         .criteria = {.column = *column, .v = value},
+         .split_sets = split_table_by_column_value(*column, get_rows, value)});
+  } else {
     return tree_t{.sheet_ = sheet_,
                   .column_value = {},
                   .node_data = result_counts(sheet_, get_rows)};
+  }
 }  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 [[nodiscard]] inline tree_t build_tree(sheet<> const& sheet_) {

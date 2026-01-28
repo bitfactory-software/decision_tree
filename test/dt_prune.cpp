@@ -1,6 +1,5 @@
 #include <version>
-#if defined __cpp_lib_generator
-
+#
 #include <bit_factory/ml/any_decision_tree.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <string>
@@ -14,7 +13,8 @@ using samples = std::vector<sample>;
 using probe = any_decision_tree::observation_tuple_t<sample>;
 
 struct sample_sheet {
-  samples data; // NOLINT (cppcoreguidelines-pro-type-member-init,hicpp-member-init)
+  samples data;  // NOLINT
+                 // (cppcoreguidelines-pro-type-member-init,hicpp-member-init)
   bool was_night_shift_is_significant = false;
 };
 
@@ -99,12 +99,14 @@ F-> {: 66, N: 1}
 )");
 }
 TEST_CASE("dt prune 2") {
-    dt_prune_test::sample_sheet sheet{ .data = dt_prune_test::test_data,
-                                      .was_night_shift_is_significant = true };
-    auto tree = any_decision_tree::build_tree(sheet);
+  dt_prune_test::sample_sheet sheet{.data = dt_prune_test::test_data,
+                                    .was_night_shift_is_significant = true};
+  auto tree = any_decision_tree::build_tree(sheet);
   CHECK(to_string(tree) ==
         R"(DaysOff >= 2?
-T-> {N: 2}
+T-> WasNighShift?
+   T-> {}
+   F-> {N: 2}
 F-> WasNighShift?
    T-> {: 65}
    F-> {: 1, N: 1}
@@ -112,10 +114,41 @@ F-> WasNighShift?
   auto pruned = any_decision_tree::prune(tree, 0.0);
   CHECK(to_string(pruned) ==
         R"(DaysOff >= 2?
-T-> {N: 2}
+T-> WasNighShift?
+   T-> {}
+   F-> {N: 2}
 F-> WasNighShift?
    T-> {: 65}
    F-> {: 1, N: 1}
 )");
 }
-#endif
+
+namespace dt_prune_test {
+
+const samples test_data2{{false, 2, "N"}, {false, 1, "N"}, {false, 1, ""}};
+}
+
+TEST_CASE("dt prune 3") {
+  dt_prune_test::sample_sheet sheet{.data = dt_prune_test::test_data2,
+                                    .was_night_shift_is_significant = false};
+  auto tree = any_decision_tree::build_tree(sheet);
+  CHECK(to_string(tree) ==
+        R"(DaysOff >= 2?
+T-> {N: 1}
+F-> {: 1, N: 1}
+)");
+}
+TEST_CASE("dt prune 4") {
+  dt_prune_test::sample_sheet sheet{.data = dt_prune_test::test_data2,
+                                    .was_night_shift_is_significant = true};
+  auto tree = any_decision_tree::build_tree(sheet);
+  CHECK(to_string(tree) ==
+        R"(DaysOff >= 2?
+T-> WasNighShift?
+   T-> {}
+   F-> {N: 1}
+F-> WasNighShift?
+   T-> {}
+   F-> {: 1, N: 1}
+)");
+}
