@@ -152,3 +152,23 @@ F-> WasNighShift?
    F-> {: 1, N: 1}
 )");
 }
+
+namespace dt_prune_test {
+
+const samples test_data3{};
+}
+
+TEST_CASE("dt prune 5") {
+  dt_prune_test::sample_sheet sheet{.data = dt_prune_test::test_data3,
+                                    .was_night_shift_is_significant = false};
+  auto tree = any_decision_tree::build_tree(sheet);
+  CHECK(to_string(tree) == R"({}
+)");
+}
+TEST_CASE("dt prune 6") {
+  dt_prune_test::sample_sheet sheet{.data = dt_prune_test::test_data3,
+                                    .was_night_shift_is_significant = true};
+  auto tree = any_decision_tree::build_tree(sheet);
+  CHECK(to_string(tree) == R"({}
+)");
+}

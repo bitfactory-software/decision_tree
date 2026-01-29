@@ -410,22 +410,24 @@ find_first_untouched_significant_column(
           sheet_, get_rows,
           gain_t{.gain = 0.0, .criteria = {}, .split_sets = {}},
           score_function(result_counts(sheet_, get_rows)), score_function);
-      best_gain.gain > 0.0) {
+      best_gain.gain > 0.0)
     return build_tree_children(sheet_, score_function, analysed_columns,
                                best_gain);
-  } else if (auto column = find_first_untouched_significant_column(
-                 sheet_, analysed_columns)) {
-    auto value = (*get_rows().begin())[*column];
-    return build_tree_children(
-        sheet_, score_function, analysed_columns,
-        {.gain = 0.0,
-         .criteria = {.column = *column, .v = value},
-         .split_sets = split_table_by_column_value(*column, get_rows, value)});
-  } else {
-    return tree_t{.sheet_ = sheet_,
-                  .column_value = {},
-                  .node_data = result_counts(sheet_, get_rows)};
-  }
+  auto rows = get_rows();
+  if (rows.begin() != rows.end())
+    if (auto column =
+            find_first_untouched_significant_column(sheet_, analysed_columns)) {
+      auto value = (*rows.begin())[*column];
+      return build_tree_children(sheet_, score_function, analysed_columns,
+                                 {.gain = 0.0,
+                                  .criteria = {.column = *column, .v = value},
+                                  .split_sets = split_table_by_column_value(
+                                      *column, get_rows, value)});
+    }
+
+  return tree_t{.sheet_ = sheet_,
+                .column_value = {},
+                .node_data = result_counts(sheet_, get_rows)};
 }
 
 [[nodiscard]] inline tree_t build_tree(sheet<> const& sheet_) {
