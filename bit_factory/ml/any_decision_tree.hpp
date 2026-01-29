@@ -401,7 +401,7 @@ find_first_untouched_significant_column(
           .false_path = std::make_unique<tree_t>(build_tree(
               sheet_, gain.split_sets[1], score_function,
               push_column(analysed_columns, gain.criteria.column)))}}};
-}
+}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 [[nodiscard]] inline tree_t build_tree(
     sheet<> const& sheet_, auto const& get_rows, auto score_function,
@@ -426,7 +426,7 @@ find_first_untouched_significant_column(
                   .column_value = {},
                   .node_data = result_counts(sheet_, get_rows)};
   }
-}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks)
+}
 
 [[nodiscard]] inline tree_t build_tree(sheet<> const& sheet_) {
   return build_tree(sheet_, sheet_, &entropy);
