@@ -264,6 +264,11 @@ F-> {None: 6, basic: 5}
         classify_with_missing_data(tree, observation{"Google", {}, {}, {}});
     CHECK(to_string(prediction_with_missing3) ==
           "{None: 0.125, Premium: 2.25, basic: 0.125}");
+
+    any_decision_tree::stream_logger log(std::cout);
+    any_decision_tree::logger l{ log };
+    auto prediction_with_missing4 =
+        classify_with_missing_data(tree, observation{ "Google", {}, {}, {} }, l);
   }
 
   {

@@ -23,6 +23,8 @@
 
 namespace bit_factory::ml::any_decision_tree {
 
+struct tree_t;
+
 #if defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-lambda-capture"
@@ -90,6 +92,9 @@ ANY(sheet,
                           []([[maybe_unused]] auto) { return false; }),
      ANY_METHOD(std::size_t, column_count, (), const)),
     anyxx::const_observer, )
+
+ANY(logger, (ANY_METHOD(void, node, (tree_t const&, observation<> const&), )),
+    anyxx::mutable_observer, )
 
 namespace detail {
 template <typename T>
@@ -183,7 +188,7 @@ template <typename T>
 struct row_model_map<T> : row_default_model_map<T> {
   static value<> subscript(T const& tuple, std::size_t i) {
     return detail::get_tuple_element<0>(tuple, i);
-  }
+  }  // namespace bit_factory::ml::any_decision_tree
 };
 
 template <typename T>
@@ -241,7 +246,6 @@ struct column_value_t {
   value<> v;
 };
 
-struct tree_t;
 struct children_t {
   std::unique_ptr<tree_t> true_path, false_path;
 };
@@ -459,12 +463,14 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
 }
 
 [[nodiscard]] result_counts_t classify_with_missing_data(
-    tree_t const& tree, observation<> const& probe);
+    tree_t const& tree, observation<> const& probe, logger<>& log);
 
 [[nodiscard]] inline result_counts_t combine_children_of_missing_data_node(
-    children_t const& children, observation<> const& probe) {
-  auto result_true = classify_with_missing_data(*children.true_path, probe);
-  auto result_false = classify_with_missing_data(*children.false_path, probe);
+    children_t const& children, observation<> const& probe, logger<>& log) {
+  auto result_true =
+      classify_with_missing_data(*children.true_path, probe, log);
+  auto result_false =
+      classify_with_missing_data(*children.false_path, probe, log);
   auto sum_true = sum(result_true);
   auto sum_false = sum(result_false);
   auto sum_both = sum_true + sum_false;
@@ -475,18 +481,46 @@ inline void add_weighted(result_counts_t& to, const result_counts_t& from,
 }
 
 [[nodiscard]] inline result_counts_t classify_with_missing_data(
-    tree_t const& tree, observation<> const& probe) {
+    tree_t const& tree, observation<> const& probe, logger<>& log) {
+  log.node(tree, probe);
   if (auto result = std::get_if<result_counts_t>(&tree.node_data))
     return *result;
 
   auto const& children = std::get<children_t>(tree.node_data);
   auto query_value = probe[tree.column_value.column];
   if (!query_value)
-    return combine_children_of_missing_data_node(children, probe);
+    return combine_children_of_missing_data_node(children, probe, log);
   else if (query_value->take_true_path(tree.column_value.v))
-    return classify_with_missing_data(*children.true_path, probe);
+    return classify_with_missing_data(*children.true_path, probe, log);
   else
-    return classify_with_missing_data(*children.false_path, probe);
+    return classify_with_missing_data(*children.false_path, probe, log);
+}
+
+struct silent_logger {
+  void node([[maybe_unused]] tree_t const& node,
+            [[maybe_unused]] observation<> const& probe) {}
+};
+
+struct stream_logger {
+  std::ostream& os;
+  void node(tree_t const& node, observation<> const& probe) {
+    if (auto result = std::get_if<result_counts_t>(&node.node_data)) {
+      os << print_result{*result} << "\n";
+    } else {
+      auto query_value = probe[node.column_value.column];
+      os << node.sheet_.column_header(node.column_value.column)
+         << node.column_value.v.splits_op() << " -> "
+         << (query_value ? query_value->to_string() : std::string{ "***" })
+         << node.column_value.v.splits_op() << "\n";
+    }
+  }
+};
+
+[[nodiscard]] inline result_counts_t classify_with_missing_data(
+    tree_t const& tree, observation<> const& probe) {
+  silent_logger silent;
+  logger nolog{silent};
+  return classify_with_missing_data(tree, probe, nolog);
 }
 
 [[nodiscard]] inline result_counts_t as_one(result_counts_t l,
